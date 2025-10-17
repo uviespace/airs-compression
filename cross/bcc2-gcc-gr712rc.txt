@@ -1,0 +1,30 @@
+# Meson cross file for the Gaisler BCC2 toolchain
+# Target: GR712RC LEON3FT SPARC V8 processor (bare metal)
+
+[binaries]
+c = 'sparc-gaisler-elf-gcc'
+cpp = 'sparc-gaisler-elf-g++'
+ar = 'sparc-gaisler-elf-ar'
+strip = 'sparc-gaisler-elf-strip'
+
+[host_machine]
+system = 'baremetal'
+cpu_family = 'sparc'
+cpu = 'gr712rc'
+endian = 'big'
+
+[built-in options]
+b_staticpic = false
+
+#Arguments from BCC User's Manual Table A.1.
+c_args = ['-qbsp=gr712rc', '-mcpu=leon3', '-mfix-gr712rc']
+c_link_args = ['-qbsp=gr712rc', '-mcpu=leon3', '-mfix-gr712rc']
+
+cpp_args = ['-qbsp=gr712rc', '-mcpu=leon3', '-mfix-gr712rc']
+cpp_link_args = ['-qbsp=gr712rc', '-mcpu=leon3', '-mfix-gr712rc']
+
+bindir = 'bin/sparc-gaisler-elf/gr712rc'
+libdir = 'lib/sparc-gaisler-elf/gr712rc'
+
+[properties]
+needs_exe_wrapper = true

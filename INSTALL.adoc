@@ -72,7 +72,42 @@ meson setup build_release --buildtype=release
 cd build_release
 ----
 
-=== Configure Build Environment
+
+== Setup a Cross-Compilation Environment
+Cross-compilation builds software on one machine (the build system) for
+execution on a different target platform (the host system). Meson uses cross
+files to specify the toolchain and target properties.
+Supported cross files are located in the `cross/` directory of the project root.
+
+=== Cross-Compilation Prerequisites
+First install a cross-compiler toolchain for your target (e.g., the
+https://www.gaisler.com/products/leon-bare-metal-cross-compiler[Gaisler BCC2
+toolchain]) and add the toolchain's `bin` directory to your `PATH` so Meson can
+find the compiler and other tools.
+
+=== GR712RC Release Build with BCC2
+For an optimized release build targeting the GR712RC processor, use the
+following configuration:
+
+[source,bash]
+----
+meson setup build_gr712rc_release \
+  --cross-file=cross/bcc2-gcc-gr712rc.txt \
+  --buildtype=plain \
+  --optimization=2 \
+  -Ddebug=false
+cd build_gr712rc_release
+----
+
+Configuration options explained:
+
+* `--cross-file`: Specifies the cross-compilation configuration
+* `--buildtype=plain`: Allows manual control of optimization flags
+* `--optimization=2`: Enables -O2 optimization level
+* `-Ddebug=false`: Disables debug symbols and other information
+
+
+== Configure a Build Environment
 Meson allows you to configure various build options.
 Use `meson configure` to list all available options, and meson configure
 `-D<option>` to set specific options.
