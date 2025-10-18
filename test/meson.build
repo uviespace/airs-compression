@@ -49,6 +49,14 @@ if get_option('b_sanitize').contains('memory')
     'dedup_token_length=3')
 endif
 
+# Unity test runner generates implementation-only sources without headers,
+# so we suppress prototype/declaration warnings for unit tests
+unit_testing_flags = [
+    '-Wno-missing-declarations',
+    '-Wno-missing-prototypes',
+    '-Wno-redundant-decls',
+    '-DCMP_MESON_BUILD_ROOT="' + meson.project_build_root() + '/"',
+]
 
 # setup the Unity Test framework
 ruby = find_program('ruby', required : false)
@@ -77,7 +85,7 @@ if ruby.found()
     test_runner = gen_test_runner.process(test_file)
     test_exe = executable(test_name, test_file, test_runner,
       include_directories : inc_cmp,
-      c_args : ['-DCMP_MESON_BUILD_ROOT="' + meson.project_build_root() + '/"'],
+      c_args : unit_testing_flags,
       link_with : [test_lib, cmp_lib, cli_lib],
       dependencies : [unity_dep])
 

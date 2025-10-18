@@ -21,7 +21,6 @@ use_debug = get_option('debug')
 add_global_arguments('-Wno-long-long', language: 'c')
 
 cc_flags = []
-non_testing_flags = []
 if use_debug
   debug_flags = [
     # more information at https://github.com/Cyan4973/Writing_Safer_C_code/blob/master/4_compiler_warnings.md
@@ -48,17 +47,12 @@ if use_debug
     '-Wformat-truncation',
     '-Wformat-security',
     '-Woverflow',
-    '-Wdocumentation'
-  ]
-  cc_flags += compiler.get_supported_arguments(debug_flags)
-
-  # the test runner generator does not generate header files, which is why we
-  # do not use these flags for tests
-  non_testing_flags = [
+    '-Wdocumentation',
     '-Wmissing-declarations',
     '-Wmissing-prototypes',
-    '-Wredundant-decls',
-    ]
+    '-Wredundant-decls'
+  ]
+  cc_flags += compiler.get_supported_arguments(debug_flags)
 endif
 add_project_arguments(cc_flags, language : 'c')
 

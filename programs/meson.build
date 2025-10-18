@@ -9,7 +9,6 @@ cli_lib = static_library('airspace_cli',
   cli_src,
   include_directories: [inc_cmp],
   implicit_include_directories: false,
-  c_args : non_testing_flags,
   install: false)
 
 airspacecli = executable('airspace',

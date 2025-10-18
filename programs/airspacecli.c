@@ -61,7 +61,7 @@ static void *malloc_safe(size_t size)
  * @warning The buffer is shared across calls and not thread-safe.
  */
 
-const char *add_airspace_suffix(const char *str)
+static const char *add_airspace_suffix(const char *str)
 {
 	static char *buf;
 	static size_t buf_size;
