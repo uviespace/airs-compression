@@ -56,6 +56,9 @@ unit_testing_flags = [
     '-Wno-missing-prototypes',
     '-Wno-redundant-decls',
     '-DCMP_MESON_BUILD_ROOT="' + meson.project_build_root() + '/"',
+    # glibc hides prototypes (e.g., snprintf(3)) from <stdio.h> under strict C89,
+    # see feature_test_macros(7)
+    '-D_POSIX_C_SOURCE=200809L',
 ]
 
 # setup the Unity Test framework

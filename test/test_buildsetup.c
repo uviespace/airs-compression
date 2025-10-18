@@ -7,7 +7,6 @@
  * @brief build environment tests
  */
 
-#define _ISOC99_SOURCE 1 /* This is needed for snprintf() in Linux with ANSI C */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -9,6 +9,9 @@ cli_lib = static_library('airspace_cli',
   cli_src,
   include_directories: [inc_cmp],
   implicit_include_directories: false,
+  # glibc hides prototypes (e.g., snprintf(3)) from <stdio.h> under strict C89,
+  # see feature_test_macros(7)
+  c_args: ['-D_POSIX_C_SOURCE=200809L'],
   install: false)
 
 airspacecli = executable('airspace',
@@ -16,7 +19,9 @@ airspacecli = executable('airspace',
   include_directories : inc_cmp,
   implicit_include_directories: false,
   link_with : [cli_lib, cmp_lib],
-  c_args : '-D_POSIX_C_SOURCE=1', # This is needed for some stdio.h function in Linux with ANSI C
+  # glibc hides prototypes (e.g., snprintf(3)) from <stdio.h> under strict C89,
+  # see feature_test_macros(7)
+  c_args : ['-D_POSIX_C_SOURCE=200809L'],
   install: true)
 
 if asciidoctor.found()
