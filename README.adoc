@@ -1,5 +1,5 @@
 ifdef::env-github[]
-:tip-caption: :bulb:
+:tip-caption: :package:
 :note-caption: :information_source:
 :important-caption: :heavy_exclamation_mark:
 :caution-caption: :warning:
@@ -34,26 +34,21 @@ toc::[]
 * Command line utility
 
 == Getting Started
+You can get started with AIRSPACE in two ways: by using a pre-compiled release
+or by building it from the source code.
 
-=== Installation
-See the xref:INSTALL.adoc[Installation Guide] for detailed setup instructions.
+=== Option 1: Use a Pre-compiled Release
+The quickest way to start is by downloading a pre-compiled binary for your
+operating system. This package includes both the `airspace` command-line tool
+and the static library (`libcmp.a`).
 
-=== Quick Start
-[source,bash]
-----
-# Clone the repository
-git clone https://github.com/uviespace/airs-compression.git airspace
-cd airspace
+TIP: https://github.com/uviespace/airs-compression/releases[*Download the latest release*]
 
-# Build using Meson
-meson setup build
-cd build
-ninja
-
-# Results:
-#  - Library: lib/libcmp.a          # Use when linking your applications
-#  - Executable: programs/airspace  # Run to compress/decompress files
-----
+=== Option 2: Build from Source
+If you need the latest development features, want to contribute, or if a
+pre-compiled release is not available for your platform, you can build the
+project from source.
+See the xref:INSTALL.adoc[INSTALL.adoc] Guide for detailed instructions on how to do it.
 
 === Examples
 For quick implementation guidance, explore our collection of example code in
@@ -66,7 +61,7 @@ See the xref:programs/README.adoc[CLI documentation] for details.
 == Documentation
 
 === Usage Documentation
-* xref:INSTALL.adoc[`INSTALL.adoc`] - Installation Guide
+* xref:INSTALL.adoc[`INSTALL.adoc`] - Installation guide
 * link:lib/cmp.h[`lib/cmp.h`] - Public Compression API
 * link:examples/[`examples/` directory] - Compression Usage Examples
 * xref:programs/README.adoc[`programs/README.adoc`] - CLI Utility README

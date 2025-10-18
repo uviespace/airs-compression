@@ -6,7 +6,8 @@ project('AIRSPACE', 'c',
   license : 'GPL-2.0',
   default_options : [
     'c_std=c89',
-    'warning_level=3'
+    'warning_level=3',
+    'pkgconfig.relocatable=true',
   ]
 )
 

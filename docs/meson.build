@@ -33,6 +33,6 @@ if doxygen.found()
     command : [doxygen, doxyfile],
     depends : [cmp_lib, airspacecli],
     install : true,
-    install_dir : join_paths(get_option('datadir'), 'docs')
-  )
+    install_dir : join_paths(get_option('datadir'), 'docs'),
+    install_tag : 'doc')
 endif

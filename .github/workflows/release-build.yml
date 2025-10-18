@@ -1,0 +1,231 @@
+name: Build and Release
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  PROJECT_NAME: airspace
+  BCC_VERSION: 2.3.1-gcc
+  BCC_INSTALL_PATH: /opt/sparc-bcc-2.3.1-gcc
+  ARTIFACT_DIR: /tmp/package
+
+jobs:
+  build-native-linux:
+    name: Native Linux Build
+    runs-on: ubuntu-latest
+
+    env:
+      BUILD_DIR: build_native
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y --no-install-recommends install \
+            build-essential \
+            ninja-build \
+            ruby
+          pip install meson
+
+      - name: Version consistency check
+        run: |
+          if [[ "$GITHUB_REF_NAME" != *"$(./test/get_library_version.py lib/cmp.h)"* ]]; then
+              LIBRARY_VERSION=$(./test/get_library_version.py lib/cmp.h)
+              echo "ERROR: Version mismatch detected!"
+              echo "  Git tag/ref: $GITHUB_REF_NAME"
+              echo "  Library version in lib/cmp.h: $LIBRARY_VERSION"
+              echo "Please ensure the tag version contains the library version."
+              exit 3
+          fi
+
+      - name: Configure build
+        run: |
+          set -euo pipefail
+          CC=gcc
+          TARGET_ARCH=$($CC -dumpmachine)
+          meson setup ${{ env.BUILD_DIR }} \
+            --buildtype=release \
+            --prefix="/${{ env.PROJECT_NAME }}-${GITHUB_REF_NAME#v}" \
+            --bindir=bin/"$TARGET_ARCH" \
+            --libdir=lib/"$TARGET_ARCH"
+
+      - name: Run tests
+        run: meson test -C ${{ env.BUILD_DIR }} --print-errorlogs
+
+      - name: Install artifacts
+        run: |
+          meson install -C ${{ env.BUILD_DIR }} \
+            --destdir "${{ env.ARTIFACT_DIR }}" \
+            --skip-subprojects \
+            --tags devel,runtime,bin
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-native-linux
+          path: ${{ env.ARTIFACT_DIR }}
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-native-linux
+          path: ${{ env.BUILD_DIR }}/meson-logs
+          retention-days: 7
+
+  build-bcc-cross:
+    name: BCC Cross-Compilation
+    runs-on: ubuntu-latest
+
+    env:
+      BUILD_DIR: build_sparc
+      TARGET_BOARD: gr712rc
+      BCC_URL: https://download.gaisler.com/anonftp/bcc2/bin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y --no-install-recommends install \
+            ninja-build \
+            doxygen \
+            graphviz \
+            ruby
+          pip install meson
+
+      - name: Restore BCC toolchain cache
+        id: cache-bcc
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BCC_INSTALL_PATH }}
+          key: bcc-${{ env.BCC_VERSION }}
+
+      - name: Download BCC toolchain
+        if: steps.cache-bcc.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          TARBALL_NAME="bcc-${{ env.BCC_VERSION }}-sparc-linux64.tar.xz"
+          DOWNLOAD_URL="${{ env.BCC_URL }}/${TARBALL_NAME}"
+          DOWNLOAD_PATH="${RUNNER_TEMP}/${TARBALL_NAME}"
+
+          echo "Downloading BCC toolchain from ${DOWNLOAD_URL}"
+          wget -v -c -O "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}"
+          sudo tar -xJvf "${DOWNLOAD_PATH}" -C /opt
+
+      - name: Setup BCC toolchain path
+        run: |
+          echo "${{ env.BCC_INSTALL_PATH }}/bin" >> "${GITHUB_PATH}"
+
+      - name: Configure cross-compilation
+        run: |
+          meson setup ${{ env.BUILD_DIR }} \
+            --cross-file cross/bcc2-gcc-gr712rc.txt \
+            --buildtype=plain \
+            --optimization=2 \
+            -Ddebug=false \
+            --prefix="/${{ env.PROJECT_NAME }}-${GITHUB_REF_NAME#v}"
+
+      - name: Install artifacts
+        run: |
+          meson install -C ${{ env.BUILD_DIR }} \
+            --destdir "${{ env.ARTIFACT_DIR }}" \
+            --tags devel,doc \
+            --skip-subprojects
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-bcc-cross
+          path: ${{ env.ARTIFACT_DIR }}
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-bcc-cross
+          path: ${{ env.BUILD_DIR }}/meson-logs
+          retention-days: 7
+
+  create-release:
+    name: Package and Release
+    runs-on: ubuntu-latest
+    needs: [build-native-linux, build-bcc-cross]
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: artifacts-*
+          path: ${{ runner.temp }}/staging
+          merge-multiple: true
+
+      - name: Create release package
+        id: package
+        run: |
+          set -euo pipefail
+
+          VERSION="${GITHUB_REF_NAME#v}" # Extract version from tag
+          RELEASE_NAME="${{ env.PROJECT_NAME }}-${VERSION}"
+          PACKAGE_PATH="${RUNNER_TEMP}/${RELEASE_NAME}.tar.gz"
+          {
+            echo "VERSION=${VERSION}";
+            echo "RELEASE_NAME=${RELEASE_NAME}";
+            echo "PACKAGE_PATH=${PACKAGE_PATH}";
+          } >> "$GITHUB_ENV"
+
+          tar -czf "${PACKAGE_PATH}" -C "${{ runner.temp }}/staging" .
+          sha256sum "${PACKAGE_PATH}" > "${PACKAGE_PATH}.sha256"
+
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        id: changelog
+        with:
+          config: docs/cliff.toml
+          args: --latest --verbose
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: AIRSPACE ${{ env.VERSION }}
+          files: |
+            ${{ env.PACKAGE_PATH }}
+            ${{ env.PACKAGE_PATH }}.sha256
+          body: ${{ steps.changelog.outputs.content }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          draft: false
+          # Auto-detect pre-releases like: 1.2.3-alpha, 1.2.3-beta.1, 1.2.3-rc.2
+          prerelease: ${{ contains(env.VERSION, '-') }}
