@@ -396,45 +396,35 @@ void test_bound_size_calculation_detects_too_large_src_size(void)
 }
 
 
-static uint64_t g_timestamp;
-static uint64_t return_timestamp_stub(void)
+static uint32_t g_coarse_time;
+static uint16_t g_fine_time;
+static void timestamp_stub(uint32_t *coarse, uint16_t *fine)
 {
-	return g_timestamp;
+	*coarse = g_coarse_time;
+	*fine = g_fine_time;
 }
 
 
-void test_detect_too_large_timestamp_during_initialisation(void)
+void test_use_provided_timestamp_as_hdr_identifier(void)
 {
-	uint32_t return_code;
-	struct cmp_context ctx;
-	struct cmp_params params = { 0 };
-
-	g_timestamp = (uint64_t)1 << 48;
-	cmp_set_timestamp_func(return_timestamp_stub);
-	return_code = cmp_initialise(&ctx, &params, NULL, 0);
-
-	TEST_ASSERT_EQUAL_CMP_ERROR(CMP_ERR_TIMESTAMP_INVALID, return_code);
-	g_timestamp = 0;
-}
-
-
-void test_detect_too_large_timestamp_during_during_compression(void)
-{
-	const uint16_t data[] = { 0, 0 };
+	uint16_t data[2] = { 0 };
 	DST_ALIGNED_U8 dst[CMP_HDR_SIZE + sizeof(data)];
-	uint32_t return_code;
-	struct cmp_context ctx;
-	struct cmp_params params = { 0 };
+	uint32_t cmp_size;
+	struct cmp_context ctx_uncompressed = create_uncompressed_context();
+	struct cmp_hdr hdr;
 
-	cmp_set_timestamp_func(return_timestamp_stub);
-	TEST_ASSERT_CMP_SUCCESS(cmp_initialise(&ctx, &params, NULL, 0));
-	TEST_ASSERT_CMP_SUCCESS(cmp_compress_u16(&ctx, dst, sizeof(dst), data, sizeof(data)));
+	cmp_set_timestamp_func(timestamp_stub);
+	g_coarse_time = 0x12345678;
+	g_fine_time = 0xABCD;
+	cmp_size = cmp_compress_u16(&ctx_uncompressed, dst, sizeof(dst), data, sizeof(data));
 
-	g_timestamp = (uint64_t)1 << 48;
-	return_code = cmp_compress_u16(&ctx, dst, sizeof(dst), data, sizeof(data));
+	TEST_ASSERT_CMP_SUCCESS(cmp_size);
+	TEST_ASSERT_CMP_SUCCESS(cmp_hdr_deserialize(dst, cmp_size, &hdr));
+	TEST_ASSERT_EQUAL_HEX64(0x12345678ABCD, hdr.identifier);
 
-	TEST_ASSERT_EQUAL_CMP_ERROR(CMP_ERR_TIMESTAMP_INVALID, return_code);
-	g_timestamp = 0;
+	g_coarse_time = 0;
+	g_fine_time = 0;
+	cmp_set_timestamp_func(NULL);
 }
 
 

@@ -14,27 +14,31 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#include "cmp.h"
-#include "cmp_errors.h"
-#include "cmp_header.h"
+#include <cmp.h>
+#include <cmp_errors.h>
+#include <cmp_header.h>
 
 
 /**
  * @brief Dummy timestamp function
  *
  * This function provides a simple dummy implementation for a timestamp provider.
- * It increments a static counter by 2 on each call and returns the result. This
- * function is intended for demonstration or testing purposes only.
- *
- * @returns a dummy 48-bit timestamp value
+ * It increments a static counter on each call and provides the result.
+ * This function is intended for demonstration or testing purposes only.
  */
 
-static uint64_t dummy_timestamp(void)
+static void dummy_timestamp(uint32_t *coarse, uint16_t *fine)
 {
-	static uint64_t dummy_time;
-	uint64_t const mask48 = (((uint64_t)1 << 48) - 1);
+	static uint32_t dummy_coarse_time;
+	static uint16_t dummy_fine_time;
 
-	return (dummy_time += 2) & mask48;
+	if (dummy_fine_time == UINT16_MAX)
+		dummy_coarse_time += 1;
+	dummy_fine_time += 1;
+
+
+	*coarse = dummy_coarse_time;
+	*fine = dummy_fine_time;
 }
 
 

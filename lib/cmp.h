@@ -135,18 +135,19 @@ struct cmp_context {
 
 /* ======  Setup Functions   ====== */
 /**
- * @brief Sets a custom function to retrieve the current timestamp.
+ * @brief sets a custom function to retrieve the current timestamp
  *
- * This function allows to specify a custom function that returns a current
- * 48-bit timestamp. This timestamp is used by the compression for example, to
- * generate unique model identifiers.
+ * This function allows the library to use a user-provided function for
+ * generating model identifiers. The callback function must populate the
+ * coarse and fine values that will be combined into a 48-bit identifier.
  *
- * @param get_current_timestamp_func	pointer to a function returning a 48-bit
- *					timestamp; if NULL, a fallback function
- *					will be set
+ * @param get_current_timestamp_func	A function pointer that populates a
+ *					coarse (32-bit) and fine (16-bit)
+ *					timestamp. If NULL, the library reverts
+ *					to its default internal monotonic counter
  */
 
-void cmp_set_timestamp_func(uint64_t (*get_current_timestamp_func)(void));
+void cmp_set_timestamp_func(void (*get_current_timestamp_func)(uint32_t *coarse, uint16_t *fine));
 
 
 /* ====== Compression Helper Functions ====== */
