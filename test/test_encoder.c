@@ -14,7 +14,7 @@
 
 #include "../lib/cmp.h"
 #include "../lib/cmp_errors.h"
-#include "../lib/common/header_private.h"
+#include "../lib/cmp_header.h"
 #include "../lib/common/bitstream_writer.h"
 
 
@@ -125,7 +125,7 @@ static void run_encoder_test(enum cmp_encoder_type type, uint32_t encoder_param,
 				       (const uint16_t *)input_data, input_size);
 
 	TEST_ASSERT_CMP_SUCCESS(output_size);
-	TEST_ASSERT_EQUAL(CMP_HDR_MAX_SIZE + expected_size, output_size);
+	TEST_ASSERT_EQUAL(CMP_HDR_SIZE + expected_size, output_size);
 	TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, cmp_hdr_get_cmp_data(output_buf), expected_size);
 	{
 		struct cmp_hdr expected_hdr = { 0 };
@@ -306,7 +306,7 @@ void test_use_secondary_encoder_for_second_pass(void)
 	const uint16_t input_data[] = { 82, 4, 0 };
 	const int8_t expected_primary[] = { 0, 82, 0, 4, 0, 0 };
 	const uint8_t expected_secondary[] = { 0xFF, 0XFF, 0x57, 0x88 };
-	DST_ALIGNED_U8 output_buf[CMP_HDR_MAX_SIZE + sizeof(expected_secondary)] = { 0 };
+	DST_ALIGNED_U8 output_buf[CMP_HDR_SIZE + sizeof(expected_primary)];
 	uint32_t output_size;
 	struct cmp_context ctx;
 	struct cmp_params params = { 0 };
@@ -330,6 +330,7 @@ void test_use_secondary_encoder_for_second_pass(void)
 	expected_hdr.compressed_size = CMP_HDR_SIZE + sizeof(expected_primary);
 	expected_hdr.original_size = sizeof(input_data);
 	expected_hdr.encoder_type = CMP_ENCODER_UNCOMPRESSED;
+	expected_hdr.preprocess_param = params.secondary_iterations;
 	TEST_ASSERT_CMP_HDR(output_buf, output_size, expected_hdr);
 
 	/* 2nd pass */
@@ -337,11 +338,11 @@ void test_use_secondary_encoder_for_second_pass(void)
 				       sizeof(input_data));
 
 	TEST_ASSERT_CMP_SUCCESS(output_size);
-	TEST_ASSERT_EQUAL(CMP_HDR_MAX_SIZE + sizeof(expected_secondary), output_size);
+	TEST_ASSERT_EQUAL(CMP_HDR_SIZE + sizeof(expected_secondary), output_size);
 	TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_secondary, cmp_hdr_get_cmp_data(output_buf),
 				     ARRAY_SIZE(expected_secondary));
 	expected_hdr.sequence_number = 1;
-	expected_hdr.compressed_size = CMP_HDR_MAX_SIZE + sizeof(expected_secondary);
+	expected_hdr.compressed_size = CMP_HDR_SIZE + sizeof(expected_secondary);
 	expected_hdr.encoder_type = CMP_ENCODER_GOLOMB_ZERO;
 	expected_hdr.encoder_param = 10;
 	expected_hdr.encoder_outlier = 165;

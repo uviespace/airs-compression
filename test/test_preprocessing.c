@@ -15,7 +15,7 @@
 #include "test_common.h"
 
 #include "../lib/cmp.h"
-#include "../lib/common/header_private.h"
+#include "../lib/cmp_header.h"
 #include "../lib/common/compiler.h"
 
 
@@ -47,7 +47,7 @@ void test_diff_preprocessing_for_multiple_values(compress_func_t compress_func, 
 {
 	const int16_t expected_diff[ARRAY_SIZE(test_diff_u16)] = { 1, 2,         -3, -1,
 								   1, INT16_MAX, 1,  0x7FFB };
-	DST_ALIGNED_U8 output_buf[CMP_HDR_MAX_SIZE + sizeof(expected_diff)];
+	DST_ALIGNED_U8 output_buf[CMP_UNCOMPRESSED_BOUND(sizeof(expected_diff))];
 	uint32_t output_size;
 	struct cmp_context ctx;
 	struct cmp_hdr expected_hdr = { 0 };
@@ -60,9 +60,8 @@ void test_diff_preprocessing_for_multiple_values(compress_func_t compress_func, 
 	output_size = compress_func(&ctx, output_buf, sizeof(output_buf), src, src_size);
 
 	TEST_ASSERT_CMP_SUCCESS(output_size);
-	TEST_ASSERT_EQUAL(CMP_HDR_MAX_SIZE + sizeof(expected_diff), output_size);
+	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(sizeof(expected_diff)), output_size);
 	assert_preprocessing_data(expected_diff, ARRAY_SIZE(expected_diff), output_buf);
-	expected_hdr.version_id = CMP_VERSION_NUMBER;
 	expected_hdr.compressed_size = output_size;
 	expected_hdr.original_size = sizeof(test_diff_u16);
 	expected_hdr.encoder_type = params.primary_encoder_type;
@@ -131,10 +130,9 @@ void test_iwt_transform(compress_func_t compress_func, const void *input, uint32
 	dst_size = compress_func(&e->ctx, e->dst, e->dst_cap, input, input_size);
 
 	TEST_ASSERT_CMP_SUCCESS(dst_size);
-	TEST_ASSERT_EQUAL(CMP_HDR_MAX_SIZE + exp_size, dst_size);
+	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(exp_size), dst_size);
 	assert_preprocessing_data(exp_output, exp_size / sizeof(int16_t), e->dst);
-	expected_hdr.version_id = CMP_VERSION_NUMBER;
-	expected_hdr.compressed_size = CMP_HDR_MAX_SIZE + exp_size;
+	expected_hdr.compressed_size = CMP_HDR_SIZE + exp_size;
 	expected_hdr.original_size = exp_size;
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = params.primary_preprocessing;
@@ -167,9 +165,8 @@ void test_model_preprocessing_for_multiple_values(compress_func_t compress_func)
 	dst_size = compress_func(&e->ctx, e->dst, e->dst_cap, data, sizeof(data));
 
 	TEST_ASSERT_CMP_SUCCESS(dst_size);
-	TEST_ASSERT_EQUAL(CMP_HDR_MAX_SIZE + sizeof(expected_output), dst_size);
+	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(sizeof(expected_output)), dst_size);
 	assert_preprocessing_data(expected_output, ARRAY_SIZE(expected_output), e->dst);
-	expected_hdr.version_id = CMP_VERSION_NUMBER;
 	expected_hdr.compressed_size = dst_size;
 	expected_hdr.original_size = sizeof(data);
 	expected_hdr.encoder_type = params.primary_encoder_type;
@@ -188,7 +185,7 @@ void test_model_preprocessing_for_multiple_i16_in_i32_values(void)
 	const int16_t expected_output[ARRAY_SIZE(start_model)] = { 1, 2, -5, 3 };
 
 	uint16_t work_buf[ARRAY_SIZE(start_model)];
-	DST_ALIGNED_U8 output_buf[CMP_HDR_MAX_SIZE + sizeof(expected_output)];
+	DST_ALIGNED_U8 output_buf[CMP_UNCOMPRESSED_BOUND(sizeof(expected_output))];
 	uint32_t output_size;
 	struct cmp_context ctx;
 	struct cmp_hdr expected_hdr = { 0 };
@@ -206,10 +203,9 @@ void test_model_preprocessing_for_multiple_i16_in_i32_values(void)
 		cmp_compress_i16_in_i32(&ctx, output_buf, sizeof(output_buf), data, sizeof(data));
 
 	TEST_ASSERT_CMP_SUCCESS(output_size);
-	TEST_ASSERT_EQUAL(CMP_HDR_MAX_SIZE + sizeof(expected_output), output_size);
+	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(sizeof(expected_output)), output_size);
 	assert_preprocessing_data(expected_output, ARRAY_SIZE(expected_output), output_buf);
 
-	expected_hdr.version_id = CMP_VERSION_NUMBER;
 	expected_hdr.compressed_size = output_size;
 	expected_hdr.original_size = sizeof(expected_output);
 	expected_hdr.encoder_type = params.primary_encoder_type;
@@ -262,14 +258,13 @@ void test_model_updates_correctly(compress_func_t compress_func, const void *src
 	output_size = compress_func(&e->ctx, e->dst, e->dst_cap, src3, src_size);
 
 	TEST_ASSERT_CMP_SUCCESS(output_size);
-	TEST_ASSERT_EQUAL(CMP_HDR_MAX_SIZE + pre_data_exp_size, output_size);
+	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(pre_data_exp_size), output_size);
 	assert_preprocessing_data(pre_data_exp, pre_data_exp_size / 2, e->dst);
-	expected_hdr.version_id = CMP_VERSION_NUMBER;
 	expected_hdr.compressed_size = output_size;
 	expected_hdr.original_size = pre_data_exp_size;
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = params.secondary_preprocessing;
-	expected_hdr.model_rate = 1;
+	expected_hdr.preprocess_param = 1;
 	expected_hdr.sequence_number = 2;
 	TEST_ASSERT_CMP_HDR(e->dst, output_size, expected_hdr);
 
@@ -302,11 +297,11 @@ void test_primary_preprocessing_after_max_secondary_iterations(compress_func_t c
 	TEST_ASSERT_CMP_SUCCESS(output_size);
 	TEST_ASSERT_EQUAL(CMP_HDR_SIZE + sizeof(test_dummy_i16), output_size);
 	assert_preprocessing_data(test_dummy_i16, ARRAY_SIZE(test_dummy_i16), e->dst);
-	expected_hdr.version_id = CMP_VERSION_NUMBER;
 	expected_hdr.compressed_size = output_size;
 	expected_hdr.original_size = sizeof(test_dummy_i16);
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = CMP_PREPROCESS_NONE;
+	expected_hdr.preprocess_param = params.secondary_iterations;
 	TEST_ASSERT_CMP_HDR(e->dst, output_size, expected_hdr);
 
 	free_env(e);
@@ -335,10 +330,10 @@ void test_unrelated_compressions_get_unique_identifiers(compress_func_t compress
 {
 	const int32_t src1[4] = { 0 };
 	const int32_t src2[4] = { 0 };
-	uint16_t work_buf1[ARRAY_SIZE(src1)*2];
-	uint16_t work_buf2[ARRAY_SIZE(src2)*2];
-	DST_ALIGNED_U8 dst_buf1[CMP_HDR_MAX_SIZE + sizeof(src1)];
-	DST_ALIGNED_U8 dst_buf2[CMP_HDR_MAX_SIZE + sizeof(src2)];
+	uint16_t work_buf1[ARRAY_SIZE(src1) * 2];
+	uint16_t work_buf2[ARRAY_SIZE(src2) * 2];
+	DST_ALIGNED_U8 dst_buf1[CMP_UNCOMPRESSED_BOUND(sizeof(src1))];
+	DST_ALIGNED_U8 dst_buf2[CMP_UNCOMPRESSED_BOUND(sizeof(src2))];
 	uint32_t dst_size1, dst_size2;
 	struct cmp_hdr hdr1, hdr2;
 	struct cmp_context ctx1, ctx2;
@@ -367,7 +362,7 @@ TEST_CASE(compress_i16_wrapper)
 void test_detect_to_small_work_buffer_in_model_preprocessing(compress_func_t compress_func)
 {
 	const uint16_t src[4] = { 0 };
-	DST_ALIGNED_U8 dst[CMP_HDR_MAX_SIZE + sizeof(src)];
+	DST_ALIGNED_U8 dst[CMP_UNCOMPRESSED_BOUND(sizeof(src))];
 	uint16_t work_buf[ARRAY_SIZE(src) - 1];
 	uint32_t work_buf_size, return_code;
 	struct cmp_context ctx;
@@ -390,7 +385,7 @@ void test_detect_to_small_work_buffer_in_model_preprocessing(compress_func_t com
 void test_detect_to_small_work_buffer_in_model_preprocessing_i16_in_i32(void)
 {
 	const int32_t src[4] = { 0 };
-	DST_ALIGNED_U8 dst[CMP_HDR_MAX_SIZE + sizeof(src) / 2];
+	DST_ALIGNED_U8 dst[CMP_UNCOMPRESSED_BOUND(ARRAY_SIZE(src) * sizeof(int16_t))];
 	uint16_t work_buf[ARRAY_SIZE(src) - 1];
 	uint32_t work_buf_size, return_code;
 	struct cmp_context ctx;
@@ -417,8 +412,8 @@ void test_detect_src_size_change_using_model_preprocessing(compress_func_t compr
 {
 	const int32_t src1[4] = { 0 };
 	const int32_t src2[2] = { 0 };
-	uint16_t work_buf[ARRAY_SIZE(src1)*2];
-	DST_ALIGNED_U8 dst[CMP_HDR_MAX_SIZE + sizeof(src1)];
+	uint16_t work_buf[ARRAY_SIZE(src1) * sizeof(int16_t)];
+	DST_ALIGNED_U8 dst[CMP_UNCOMPRESSED_BOUND(sizeof(src1))];
 	uint32_t return_code;
 	struct cmp_context ctx;
 	struct cmp_params params = { 0 };

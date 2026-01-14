@@ -2,11 +2,10 @@
 #define SAMPLE_READER_H
 
 #include <stdint.h>
-#include <stddef.h>
 
-#include "../common/err_private.h"
+#include "../cmp.h"
+#include "err_private.h"
 
-enum cmp_type { CMP_I16 = 0, CMP_I16_IN_I32, CMP_U16 };
 
 struct sample_desc {
 	const void *data;
@@ -75,6 +74,6 @@ static __inline int16_t sample_read_i16(const struct sample_desc *desc, uint32_t
 static __inline uint32_t get_packed_size(const struct sample_desc *desc)
 {
 	return desc->num_samples * sizeof(int16_t);
- }
+}
 
 #endif /* SAMPLE_READER_H */

@@ -159,40 +159,6 @@ static __inline void bitstream_add_bits32(struct bitstream_writer *bs, uint32_t 
 
 
 /**
- * @brief Same as bitstream_write32() but for 64 bits
- */
-
-static __inline void bitstream_add_bits64(struct bitstream_writer *bs, uint64_t value,
-					  unsigned int nb_bits)
-{
-	if (nb_bits <= 32) {
-		bitstream_add_bits32(bs, (uint32_t)value, nb_bits);
-	} else {
-		uint32_t hi = (uint32_t)(value >> 32);
-		uint32_t lo = (uint32_t)value;
-
-		bitstream_add_bits32(bs, hi, nb_bits - 32);
-		bitstream_add_bits32(bs, lo, 32);
-	}
-}
-
-
-/**
- * @brief Pads the last byte with zeros if it's not completely filled
- *
- * @param bs	pointer to an initialised bitstream_writer structure
- */
-
-static __inline void bitstream_pad_last_byte(struct bitstream_writer *bs)
-{
-	unsigned int const bits_in_last_byte = (64 - bs->bit_cap) % 8;
-
-	if (bits_in_last_byte != 0)
-		bitstream_add_bits32(bs, 0, 8 - bits_in_last_byte);
-}
-
-
-/**
  * @brief Flushes remaining bits form the internal cache to the buffer
  * Last byte may be padded with zeros
  *

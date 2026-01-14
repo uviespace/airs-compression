@@ -13,6 +13,7 @@
 #include "preprocess.h"
 #include "encoder.h"
 #include "../cmp.h"
+#include "../cmp_header.h"
 #include "../common/sample_reader.h"
 #include "../common/err_private.h"
 #include "../common/bitstream_writer.h"
@@ -23,30 +24,14 @@
 #define CMP_MAGIC 34021395 /* arbitrary magic number I like */
 
 
-/* Fallback monotonic counter implementation for g_get_timestamp() */
-static void fallback_get_timestamp(uint32_t *coarse, uint16_t *fine)
+/* Global identifier counter state */
+static uint32_t g_identifier;
+
+
+void cmp_hdr_set_identifier(uint32_t identifier)
 {
-	static uint64_t cnt;
-
-	*coarse = (uint32_t)(cnt >> 16);
-	*fine = (uint16_t)cnt;
-	cnt++;
-}
-
-
-/**
- * Function pointer to a function providing a timestamp initialised with
- * cmp_set_timestamp_func()
- */
-static void (*g_get_timestamp)(uint32_t *coarse, uint16_t *fine) = fallback_get_timestamp;
-
-
-void cmp_set_timestamp_func(void (*get_current_timestamp_func)(uint32_t *coarse, uint16_t *fine))
-{
-	if (get_current_timestamp_func)
-		g_get_timestamp = get_current_timestamp_func;
-	else
-		g_get_timestamp = fallback_get_timestamp;
+	/* TODO: make this atomic */
+	g_identifier = identifier;
 }
 
 
@@ -65,7 +50,7 @@ uint32_t cmp_compress_bound(uint32_t packed_size)
 	if (packed_size > CMP_HDR_MAX_ORIGINAL_SIZE)
 		return (CMP_ERROR(HDR_ORIGINAL_TOO_LARGE));
 
-	bound = CMP_HDR_MAX_SIZE + CMP_CHECKSUM_SIZE + cmp_encoder_max_compressed_size(packed_size);
+	bound = CMP_HDR_SIZE + cmp_encoder_max_compressed_size(packed_size);
 
 	if (bound > CMP_HDR_MAX_COMPRESSED_SIZE)
 		return (CMP_ERROR(HDR_CMP_SIZE_TOO_LARGE));
@@ -262,17 +247,21 @@ static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst
 	if (cmp_is_error_int(ret))
 		return ret;
 
-	hdr.version_flag = 1;
-	hdr.version_id = CMP_VERSION_NUMBER;
+	hdr.version = CMP_VERSION_NUMBER;
 	hdr.original_size = get_packed_size(src_desc);
 	hdr.compressed_size = 0; /* place holder, not know right now */
+	if (ctx->params.checksum_enabled)
+		hdr.checksum = cmp_hdr_checksum_int(src_desc);
+	else
+		hdr.checksum = 0;
 	hdr.identifier = ctx->identifier;
 	hdr.sequence_number = ctx->sequence_number;
 	hdr.preprocessing = selected_preprocessing;
-	hdr.checksum_enabled = !!ctx->params.checksum_enabled;
 	hdr.encoder_type = selected_encoder_type;
 	if (selected_preprocessing == CMP_PREPROCESS_MODEL)
-		hdr.model_rate = ctx->params.model_rate;
+		hdr.preprocess_param = ctx->params.model_rate;
+	else
+		hdr.preprocess_param = ctx->params.secondary_iterations;
 	if (selected_encoder_type != CMP_ENCODER_UNCOMPRESSED) {
 		hdr.encoder_param = selected_encoder_param;
 		hdr.encoder_outlier = enc.outlier;
@@ -309,13 +298,6 @@ static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst
 							(int)ctx->params.model_rate,
 							src_desc->type);
 		}
-	}
-
-	if (ctx->params.checksum_enabled) {
-		uint32_t const checksum = cmp_checksum(src_desc);
-
-		bitstream_pad_last_byte(&bs);
-		bitstream_add_bits32(&bs, checksum, bitsizeof(checksum));
 	}
 
 	hdr.compressed_size = bitstream_flush(&bs);
@@ -355,9 +337,6 @@ static uint32_t cmp_compress_generic(struct cmp_context *ctx, void *dst, uint32_
 
 	if (cmp_is_error_int(dst_capacity))
 		return CMP_ERROR(GENERIC);
-
-	if (ctx->params.checksum_enabled)
-		uncompressed_size += CMP_CHECKSUM_SIZE;
 
 	/* Skip fallback if disabled or output buffer too small for uncompressed */
 	if (!ctx->params.uncompressed_fallback_enabled || dst_capacity < uncompressed_size)
@@ -435,17 +414,10 @@ uint32_t cmp_compress_i16_in_i32(struct cmp_context *ctx, void *dst, uint32_t ds
 }
 
 
-static uint64_t cmp_get_new_identifier(void)
+static uint32_t cmp_get_new_identifier(void)
 {
-	uint32_t coarse = 0;
-	uint16_t fine = 0;
-
-	compile_time_assert(bitsizeof(coarse) + bitsizeof(fine) == CMP_HDR_BITS_IDENTIFIER,
-			    cmp_hdr_identifier_timestamp_mismatch);
-
-	g_get_timestamp(&coarse, &fine);
-
-	return ((uint64_t)coarse << 16) | (uint64_t)fine;
+	/* TODO: make this atomic */
+	return g_identifier++;
 }
 
 
