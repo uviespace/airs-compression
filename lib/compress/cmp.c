@@ -258,6 +258,7 @@ static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst
 	hdr.sequence_number = ctx->sequence_number;
 	hdr.preprocessing = selected_preprocessing;
 	hdr.encoder_type = selected_encoder_type;
+	hdr.original_dtype = src_desc->type;
 	if (selected_preprocessing == CMP_PREPROCESS_MODEL)
 		hdr.preprocess_param = ctx->params.model_rate;
 	else

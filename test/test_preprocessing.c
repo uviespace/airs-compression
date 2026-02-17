@@ -38,12 +38,12 @@ const uint16_t test_diff_u16[8] = { DIFF_PREPROC_SRC_VALUES };
 const int16_t test_diff_i16[8] = { DIFF_PREPROC_SRC_VALUES };
 const int32_t test_diff_i16_in_i32[8] = { DIFF_PREPROC_SRC_VALUES };
 
-TEST_CASE(compress_u16_wrapper, ARRAY_AND_SIZE(test_diff_u16))
-TEST_CASE(compress_i16_wrapper, ARRAY_AND_SIZE(test_diff_i16))
-TEST_CASE(compress_i16_in_i32_wrapper, ARRAY_AND_SIZE(test_diff_i16_in_i32))
+TEST_CASE(&cmp_fixture_u16, ARRAY_AND_SIZE(test_diff_u16))
+TEST_CASE(&cmp_fixture_i16, ARRAY_AND_SIZE(test_diff_i16))
+TEST_CASE(&cmp_fixture_i16_in_i32, ARRAY_AND_SIZE(test_diff_i16_in_i32))
 
-void test_diff_preprocessing_for_multiple_values(compress_func_t compress_func, const void *src,
-						 uint32_t src_size)
+void test_diff_preprocessing_for_multiple_values(const struct cmp_test_fixture *fix,
+						 const void *src, uint32_t src_size)
 {
 	const int16_t expected_diff[ARRAY_SIZE(test_diff_u16)] = { 1, 2,         -3, -1,
 								   1, INT16_MAX, 1,  0x7FFB };
@@ -57,13 +57,14 @@ void test_diff_preprocessing_for_multiple_values(compress_func_t compress_func, 
 	params.primary_preprocessing = CMP_PREPROCESS_DIFF;
 	TEST_ASSERT_CMP_SUCCESS(cmp_initialise(&ctx, &params, NULL, 0));
 
-	output_size = compress_func(&ctx, output_buf, sizeof(output_buf), src, src_size);
+	output_size = fix->compress(&ctx, output_buf, sizeof(output_buf), src, src_size);
 
 	TEST_ASSERT_CMP_SUCCESS(output_size);
 	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(sizeof(expected_diff)), output_size);
 	assert_preprocessing_data(expected_diff, ARRAY_SIZE(expected_diff), output_buf);
 	expected_hdr.compressed_size = output_size;
 	expected_hdr.original_size = sizeof(test_diff_u16);
+	expected_hdr.original_dtype = fix->dtype;
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = params.primary_preprocessing;
 	TEST_ASSERT_CMP_HDR(output_buf, output_size, expected_hdr);
@@ -90,32 +91,32 @@ const int16_t g_iwt_input_8[8] = { -3, 2, -1, 3, -2, 5, 0, 7 };
 const int32_t g_iwt_input_8_i32[8] = { -3, 2, -1, 3, -2, 5, 0, 7 };
 const int16_t g_iwt_exp_out_8[8] = { 0, 4, 2, 5, 1, 6, 3, 7 };
 
-TEST_CASE(compress_u16_wrapper, ARRAY_AND_SIZE(g_iwt_input_1), ARRAY_AND_SIZE(g_iwt_exp_out_1))
-TEST_CASE(compress_i16_wrapper, ARRAY_AND_SIZE(g_iwt_input_1), ARRAY_AND_SIZE(g_iwt_exp_out_1))
-TEST_CASE(compress_i16_in_i32_wrapper, ARRAY_AND_SIZE(g_iwt_input_1_i32),
+TEST_CASE(&cmp_fixture_u16, ARRAY_AND_SIZE(g_iwt_input_1), ARRAY_AND_SIZE(g_iwt_exp_out_1))
+TEST_CASE(&cmp_fixture_i16, ARRAY_AND_SIZE(g_iwt_input_1), ARRAY_AND_SIZE(g_iwt_exp_out_1))
+TEST_CASE(&cmp_fixture_i16_in_i32, ARRAY_AND_SIZE(g_iwt_input_1_i32),
 	  ARRAY_AND_SIZE(g_iwt_exp_out_1))
 
-TEST_CASE(compress_u16_wrapper, ARRAY_AND_SIZE(g_iwt_input_2), ARRAY_AND_SIZE(g_iwt_exp_out_2))
-TEST_CASE(compress_i16_wrapper, ARRAY_AND_SIZE(g_iwt_input_2), ARRAY_AND_SIZE(g_iwt_exp_out_2))
-TEST_CASE(compress_i16_in_i32_wrapper, ARRAY_AND_SIZE(g_iwt_input_2_i32),
+TEST_CASE(&cmp_fixture_u16, ARRAY_AND_SIZE(g_iwt_input_2), ARRAY_AND_SIZE(g_iwt_exp_out_2))
+TEST_CASE(&cmp_fixture_i16, ARRAY_AND_SIZE(g_iwt_input_2), ARRAY_AND_SIZE(g_iwt_exp_out_2))
+TEST_CASE(&cmp_fixture_i16_in_i32, ARRAY_AND_SIZE(g_iwt_input_2_i32),
 	  ARRAY_AND_SIZE(g_iwt_exp_out_2))
 
-TEST_CASE(compress_u16_wrapper, ARRAY_AND_SIZE(g_iwt_input_5), ARRAY_AND_SIZE(g_iwt_exp_out_5))
-TEST_CASE(compress_i16_wrapper, ARRAY_AND_SIZE(g_iwt_input_5), ARRAY_AND_SIZE(g_iwt_exp_out_5))
-TEST_CASE(compress_i16_in_i32_wrapper, ARRAY_AND_SIZE(g_iwt_input_5_i32),
+TEST_CASE(&cmp_fixture_u16, ARRAY_AND_SIZE(g_iwt_input_5), ARRAY_AND_SIZE(g_iwt_exp_out_5))
+TEST_CASE(&cmp_fixture_i16, ARRAY_AND_SIZE(g_iwt_input_5), ARRAY_AND_SIZE(g_iwt_exp_out_5))
+TEST_CASE(&cmp_fixture_i16_in_i32, ARRAY_AND_SIZE(g_iwt_input_5_i32),
 	  ARRAY_AND_SIZE(g_iwt_exp_out_5))
 
-TEST_CASE(compress_u16_wrapper, ARRAY_AND_SIZE(g_iwt_input_7), ARRAY_AND_SIZE(g_iwt_exp_out_7))
-TEST_CASE(compress_i16_wrapper, ARRAY_AND_SIZE(g_iwt_input_7), ARRAY_AND_SIZE(g_iwt_exp_out_7))
-TEST_CASE(compress_i16_in_i32_wrapper, ARRAY_AND_SIZE(g_iwt_input_7_i32),
+TEST_CASE(&cmp_fixture_u16, ARRAY_AND_SIZE(g_iwt_input_7), ARRAY_AND_SIZE(g_iwt_exp_out_7))
+TEST_CASE(&cmp_fixture_i16, ARRAY_AND_SIZE(g_iwt_input_7), ARRAY_AND_SIZE(g_iwt_exp_out_7))
+TEST_CASE(&cmp_fixture_i16_in_i32, ARRAY_AND_SIZE(g_iwt_input_7_i32),
 	  ARRAY_AND_SIZE(g_iwt_exp_out_7))
 
-TEST_CASE(compress_u16_wrapper, ARRAY_AND_SIZE(g_iwt_input_8), ARRAY_AND_SIZE(g_iwt_exp_out_8))
-TEST_CASE(compress_i16_wrapper, ARRAY_AND_SIZE(g_iwt_input_8), ARRAY_AND_SIZE(g_iwt_exp_out_8))
-TEST_CASE(compress_i16_in_i32_wrapper, ARRAY_AND_SIZE(g_iwt_input_8_i32),
+TEST_CASE(&cmp_fixture_u16, ARRAY_AND_SIZE(g_iwt_input_8), ARRAY_AND_SIZE(g_iwt_exp_out_8))
+TEST_CASE(&cmp_fixture_i16, ARRAY_AND_SIZE(g_iwt_input_8), ARRAY_AND_SIZE(g_iwt_exp_out_8))
+TEST_CASE(&cmp_fixture_i16_in_i32, ARRAY_AND_SIZE(g_iwt_input_8_i32),
 	  ARRAY_AND_SIZE(g_iwt_exp_out_8))
 
-void test_iwt_transform(compress_func_t compress_func, const void *input, uint32_t input_size,
+void test_iwt_transform(const struct cmp_test_fixture *fix, const void *input, uint32_t input_size,
 			const int16_t *exp_output, uint32_t exp_size)
 {
 	uint32_t dst_size;
@@ -127,13 +128,14 @@ void test_iwt_transform(compress_func_t compress_func, const void *input, uint32
 	params.primary_preprocessing = CMP_PREPROCESS_IWT;
 	e = make_env(&params, exp_size);
 
-	dst_size = compress_func(&e->ctx, e->dst, e->dst_cap, input, input_size);
+	dst_size = fix->compress(&e->ctx, e->dst, e->dst_cap, input, input_size);
 
 	TEST_ASSERT_CMP_SUCCESS(dst_size);
 	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(exp_size), dst_size);
 	assert_preprocessing_data(exp_output, exp_size / sizeof(int16_t), e->dst);
 	expected_hdr.compressed_size = CMP_HDR_SIZE + exp_size;
 	expected_hdr.original_size = exp_size;
+	expected_hdr.original_dtype = fix->dtype;
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = params.primary_preprocessing;
 	TEST_ASSERT_CMP_HDR(e->dst, dst_size, expected_hdr);
@@ -142,9 +144,8 @@ void test_iwt_transform(compress_func_t compress_func, const void *input, uint32
 }
 
 
-TEST_CASE(compress_u16_wrapper)
-TEST_CASE(compress_i16_wrapper)
-void test_model_preprocessing_for_multiple_values(compress_func_t compress_func)
+TEST_MATRIX([&cmp_fixture_u16, &cmp_fixture_i16])
+void test_model_preprocessing_for_multiple_values(const struct cmp_test_fixture *fix)
 {
 	const uint16_t start_model[] = { 0, 1, 10 };
 	const uint16_t data[ARRAY_SIZE(start_model)] = { 1, 3, 5 };
@@ -161,14 +162,15 @@ void test_model_preprocessing_for_multiple_values(compress_func_t compress_func)
 	e = make_env(&params, sizeof(data));
 
 	TEST_ASSERT_CMP_SUCCESS(
-		compress_func(&e->ctx, e->dst, e->dst_cap, start_model, sizeof(start_model)));
-	dst_size = compress_func(&e->ctx, e->dst, e->dst_cap, data, sizeof(data));
+		fix->compress(&e->ctx, e->dst, e->dst_cap, start_model, sizeof(start_model)));
+	dst_size = fix->compress(&e->ctx, e->dst, e->dst_cap, data, sizeof(data));
 
 	TEST_ASSERT_CMP_SUCCESS(dst_size);
 	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(sizeof(expected_output)), dst_size);
 	assert_preprocessing_data(expected_output, ARRAY_SIZE(expected_output), e->dst);
 	expected_hdr.compressed_size = dst_size;
 	expected_hdr.original_size = sizeof(data);
+	expected_hdr.original_dtype = fix->dtype;
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = params.secondary_preprocessing;
 	expected_hdr.sequence_number = 1;
@@ -208,6 +210,7 @@ void test_model_preprocessing_for_multiple_i16_in_i32_values(void)
 
 	expected_hdr.compressed_size = output_size;
 	expected_hdr.original_size = sizeof(expected_output);
+	expected_hdr.original_dtype = CMP_I16_IN_I32;
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = params.secondary_preprocessing;
 	expected_hdr.sequence_number = 1;
@@ -229,16 +232,16 @@ const int32_t model_input1_i16_in_i32[7] = { 15, 2, 21, 0, 0, INT16_MIN, INT16_M
 const int32_t model_input2_i16_in_i32[7] = { -2, 3, 5, -1, 0, INT16_MIN, INT16_MAX };
 const int32_t model_input3_i16_in_i32[7] = { 0 };
 
-TEST_CASE(compress_u16_wrapper, model_input1_u16, model_input2_u16,
-	  ARRAY_AND_SIZE(model_input3_u16), ARRAY_AND_SIZE(expec_output_u16))
-TEST_CASE(compress_i16_wrapper, model_input1_i16, model_input2_i16,
-	  ARRAY_AND_SIZE(model_input3_i16), ARRAY_AND_SIZE(expected_out_i16))
-TEST_CASE(compress_i16_in_i32_wrapper, model_input1_i16_in_i32, model_input2_i16_in_i32,
+TEST_CASE(&cmp_fixture_u16, model_input1_u16, model_input2_u16, ARRAY_AND_SIZE(model_input3_u16),
+	  ARRAY_AND_SIZE(expec_output_u16))
+TEST_CASE(&cmp_fixture_i16, model_input1_i16, model_input2_i16, ARRAY_AND_SIZE(model_input3_i16),
+	  ARRAY_AND_SIZE(expected_out_i16))
+TEST_CASE(&cmp_fixture_i16_in_i32, model_input1_i16_in_i32, model_input2_i16_in_i32,
 	  ARRAY_AND_SIZE(model_input3_i16_in_i32), ARRAY_AND_SIZE(expected_out_i16))
 
-void test_model_updates_correctly(compress_func_t compress_func, const void *src1, const void *src2,
-				  const void *src3, uint32_t src_size, const void *pre_data_exp,
-				  uint32_t pre_data_exp_size)
+void test_model_updates_correctly(const struct cmp_test_fixture *fix, const void *src1,
+				  const void *src2, const void *src3, uint32_t src_size,
+				  const void *pre_data_exp, uint32_t pre_data_exp_size)
 {
 	uint32_t output_size;
 	struct test_env *e;
@@ -253,15 +256,16 @@ void test_model_updates_correctly(compress_func_t compress_func, const void *src
 	params.secondary_iterations = 2;
 	e = make_env(&params, pre_data_exp_size);
 
-	TEST_ASSERT_CMP_SUCCESS(compress_func(&e->ctx, e->dst, e->dst_cap, src1, src_size));
-	TEST_ASSERT_CMP_SUCCESS(compress_func(&e->ctx, e->dst, e->dst_cap, src2, src_size));
-	output_size = compress_func(&e->ctx, e->dst, e->dst_cap, src3, src_size);
+	TEST_ASSERT_CMP_SUCCESS(fix->compress(&e->ctx, e->dst, e->dst_cap, src1, src_size));
+	TEST_ASSERT_CMP_SUCCESS(fix->compress(&e->ctx, e->dst, e->dst_cap, src2, src_size));
+	output_size = fix->compress(&e->ctx, e->dst, e->dst_cap, src3, src_size);
 
 	TEST_ASSERT_CMP_SUCCESS(output_size);
 	TEST_ASSERT_EQUAL(CMP_UNCOMPRESSED_BOUND(pre_data_exp_size), output_size);
 	assert_preprocessing_data(pre_data_exp, pre_data_exp_size / 2, e->dst);
 	expected_hdr.compressed_size = output_size;
 	expected_hdr.original_size = pre_data_exp_size;
+	expected_hdr.original_dtype = fix->dtype;
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = params.secondary_preprocessing;
 	expected_hdr.preprocess_param = 1;
@@ -272,10 +276,10 @@ void test_model_updates_correctly(compress_func_t compress_func, const void *src
 }
 
 
-TEST_CASE(compress_u16_wrapper, ARRAY_AND_SIZE(test_dummy_u16))
-TEST_CASE(compress_i16_wrapper, ARRAY_AND_SIZE(test_dummy_i16))
-TEST_CASE(compress_i16_in_i32_wrapper, ARRAY_AND_SIZE(test_dummy_i16_in_i32))
-void test_primary_preprocessing_after_max_secondary_iterations(compress_func_t compress_func,
+TEST_CASE(&cmp_fixture_u16, ARRAY_AND_SIZE(test_dummy_u16))
+TEST_CASE(&cmp_fixture_i16, ARRAY_AND_SIZE(test_dummy_i16))
+TEST_CASE(&cmp_fixture_i16_in_i32, ARRAY_AND_SIZE(test_dummy_i16_in_i32))
+void test_primary_preprocessing_after_max_secondary_iterations(const struct cmp_test_fixture *fix,
 							       const void *src, uint32_t src_size)
 {
 	uint32_t output_size;
@@ -289,16 +293,17 @@ void test_primary_preprocessing_after_max_secondary_iterations(compress_func_t c
 	params.secondary_iterations = 2;
 	e = make_env(&params, sizeof(test_dummy_i16));
 
-	TEST_ASSERT_CMP_SUCCESS(compress_func(&e->ctx, e->dst, e->dst_cap, src, src_size));
-	TEST_ASSERT_CMP_SUCCESS(compress_func(&e->ctx, e->dst, e->dst_cap, src, src_size));
-	TEST_ASSERT_CMP_SUCCESS(compress_func(&e->ctx, e->dst, e->dst_cap, src, src_size));
-	output_size = compress_func(&e->ctx, e->dst, e->dst_cap, src, src_size);
+	TEST_ASSERT_CMP_SUCCESS(fix->compress(&e->ctx, e->dst, e->dst_cap, src, src_size));
+	TEST_ASSERT_CMP_SUCCESS(fix->compress(&e->ctx, e->dst, e->dst_cap, src, src_size));
+	TEST_ASSERT_CMP_SUCCESS(fix->compress(&e->ctx, e->dst, e->dst_cap, src, src_size));
+	output_size = fix->compress(&e->ctx, e->dst, e->dst_cap, src, src_size);
 
 	TEST_ASSERT_CMP_SUCCESS(output_size);
 	TEST_ASSERT_EQUAL(CMP_HDR_SIZE + sizeof(test_dummy_i16), output_size);
 	assert_preprocessing_data(test_dummy_i16, ARRAY_SIZE(test_dummy_i16), e->dst);
 	expected_hdr.compressed_size = output_size;
 	expected_hdr.original_size = sizeof(test_dummy_i16);
+	expected_hdr.original_dtype = fix->dtype;
 	expected_hdr.encoder_type = params.primary_encoder_type;
 	expected_hdr.preprocessing = CMP_PREPROCESS_NONE;
 	expected_hdr.preprocess_param = params.secondary_iterations;
@@ -323,10 +328,8 @@ void test_detect_invalid_primary_preprocessing_model_usage(void)
 }
 
 
-TEST_CASE(compress_u16_wrapper)
-TEST_CASE(compress_i16_wrapper)
-TEST_CASE(compress_i16_in_i32_wrapper)
-void test_unrelated_compressions_get_unique_identifiers(compress_func_t compress_func)
+TEST_MATRIX([&cmp_fixture_u16, &cmp_fixture_i16, &cmp_fixture_i16_in_i32])
+void test_unrelated_compressions_get_unique_identifiers(const struct cmp_test_fixture *fix)
 {
 	const int32_t src1[4] = { 0 };
 	const int32_t src2[4] = { 0 };
@@ -346,8 +349,8 @@ void test_unrelated_compressions_get_unique_identifiers(compress_func_t compress
 	TEST_ASSERT_CMP_SUCCESS(cmp_initialise(&ctx1, &params, work_buf1, sizeof(work_buf1)));
 	TEST_ASSERT_CMP_SUCCESS(cmp_initialise(&ctx2, &params, work_buf2, sizeof(work_buf2)));
 
-	dst_size1 = compress_func(&ctx1, dst_buf1, sizeof(dst_buf1), src1, sizeof(src1));
-	dst_size2 = compress_func(&ctx2, dst_buf2, sizeof(dst_buf2), src2, sizeof(src2));
+	dst_size1 = fix->compress(&ctx1, dst_buf1, sizeof(dst_buf1), src1, sizeof(src1));
+	dst_size2 = fix->compress(&ctx2, dst_buf2, sizeof(dst_buf2), src2, sizeof(src2));
 
 	TEST_ASSERT_CMP_SUCCESS(dst_size1);
 	TEST_ASSERT_CMP_SUCCESS(dst_size2);
@@ -357,9 +360,8 @@ void test_unrelated_compressions_get_unique_identifiers(compress_func_t compress
 }
 
 
-TEST_CASE(compress_u16_wrapper)
-TEST_CASE(compress_i16_wrapper)
-void test_detect_to_small_work_buffer_in_model_preprocessing(compress_func_t compress_func)
+TEST_MATRIX([&cmp_fixture_u16, &cmp_fixture_i16])
+void test_detect_to_small_work_buffer_in_model_preprocessing(const struct cmp_test_fixture *fix)
 {
 	const uint16_t src[4] = { 0 };
 	DST_ALIGNED_U8 dst[CMP_UNCOMPRESSED_BOUND(sizeof(src))];
@@ -376,7 +378,7 @@ void test_detect_to_small_work_buffer_in_model_preprocessing(compress_func_t com
 	TEST_ASSERT_LESS_THAN(work_buf_size, sizeof(work_buf));
 	TEST_ASSERT_CMP_SUCCESS(cmp_initialise(&ctx, &params, work_buf, sizeof(work_buf)));
 
-	return_code = compress_func(&ctx, dst, sizeof(dst), src, sizeof(src));
+	return_code = fix->compress(&ctx, dst, sizeof(dst), src, sizeof(src));
 
 	TEST_ASSERT_EQUAL_CMP_ERROR(CMP_ERR_WORK_BUF_TOO_SMALL, return_code);
 }
@@ -399,16 +401,14 @@ void test_detect_to_small_work_buffer_in_model_preprocessing_i16_in_i32(void)
 	TEST_ASSERT_LESS_THAN(work_buf_size, sizeof(work_buf));
 	TEST_ASSERT_CMP_SUCCESS(cmp_initialise(&ctx, &params, work_buf, sizeof(work_buf)));
 
-	return_code = compress_i16_in_i32_wrapper(&ctx, dst, sizeof(dst), src, sizeof(src));
+	return_code = cmp_compress_i16_in_i32(&ctx, dst, sizeof(dst), src, sizeof(src));
 
 	TEST_ASSERT_EQUAL_CMP_ERROR(CMP_ERR_WORK_BUF_TOO_SMALL, return_code);
 }
 
 
-TEST_CASE(compress_u16_wrapper)
-TEST_CASE(compress_i16_wrapper)
-TEST_CASE(compress_i16_in_i32_wrapper)
-void test_detect_src_size_change_using_model_preprocessing(compress_func_t compress_func)
+TEST_MATRIX([&cmp_fixture_u16, &cmp_fixture_i16, &cmp_fixture_i16_in_i32])
+void test_detect_src_size_change_using_model_preprocessing(const struct cmp_test_fixture *fix)
 {
 	const int32_t src1[4] = { 0 };
 	const int32_t src2[2] = { 0 };
@@ -423,9 +423,9 @@ void test_detect_src_size_change_using_model_preprocessing(compress_func_t compr
 	params.secondary_preprocessing = CMP_PREPROCESS_MODEL;
 	params.secondary_iterations = 10;
 	TEST_ASSERT_CMP_SUCCESS(cmp_initialise(&ctx, &params, work_buf, sizeof(work_buf)));
-	TEST_ASSERT_CMP_SUCCESS(compress_func(&ctx, dst, sizeof(dst), src1, sizeof(src1)));
+	TEST_ASSERT_CMP_SUCCESS(fix->compress(&ctx, dst, sizeof(dst), src1, sizeof(src1)));
 
-	return_code = compress_func(&ctx, dst, sizeof(dst), src2, sizeof(src2));
+	return_code = fix->compress(&ctx, dst, sizeof(dst), src2, sizeof(src2));
 
 	TEST_ASSERT_EQUAL_CMP_ERROR(CMP_ERR_SRC_SIZE_MISMATCH, return_code);
 }

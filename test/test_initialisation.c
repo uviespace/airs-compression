@@ -136,6 +136,7 @@ void test_ignore_invalid_secondary_preprocessing_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
 	}
 }
@@ -192,6 +193,7 @@ void test_ignore_invalid_secondary_encodder_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
 	}
 }
@@ -256,6 +258,7 @@ void test_ignore_invalid_primary_golomb_encoder_parameter_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		expected_hdr.preprocessing = CMP_PREPROCESS_DIFF;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
 	}
@@ -313,6 +316,7 @@ void test_ignore_invalid_secondary_golomb_encoder_parameter_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		expected_hdr.preprocessing = CMP_PREPROCESS_DIFF;
 		expected_hdr.preprocess_param = 1;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
@@ -364,6 +368,7 @@ void test_ignore_invalid_model_rate_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		expected_hdr.preprocessing = CMP_PREPROCESS_DIFF;
 		expected_hdr.preprocess_param = 1;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);

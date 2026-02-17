@@ -135,6 +135,7 @@ static void run_encoder_test(enum cmp_encoder_type type, uint32_t encoder_param,
 		expected_hdr.encoder_type = type;
 		expected_hdr.encoder_param = encoder_param;
 		expected_hdr.encoder_outlier = expected_hdr_outlier;
+		expected_hdr.original_dtype = CMP_U16;
 		TEST_ASSERT_CMP_HDR(output_buf, output_size, expected_hdr);
 	}
 }
@@ -330,6 +331,7 @@ void test_use_secondary_encoder_for_second_pass(void)
 	expected_hdr.compressed_size = CMP_HDR_SIZE + sizeof(expected_primary);
 	expected_hdr.original_size = sizeof(input_data);
 	expected_hdr.encoder_type = CMP_ENCODER_UNCOMPRESSED;
+	expected_hdr.original_dtype = CMP_U16;
 	expected_hdr.preprocess_param = params.secondary_iterations;
 	TEST_ASSERT_CMP_HDR(output_buf, output_size, expected_hdr);
 

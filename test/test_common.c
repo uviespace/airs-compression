@@ -172,22 +172,27 @@ void free_env(struct test_env *e)
 }
 
 
-uint32_t compress_u16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap, const void *src,
-			      uint32_t src_size)
+static uint32_t compress_u16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
+				     const void *src, uint32_t src_size)
 {
 	return cmp_compress_u16(ctx, dst, cap, src, src_size);
 }
 
 
-uint32_t compress_i16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap, const void *src,
-			      uint32_t src_size)
+static uint32_t compress_i16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
+				     const void *src, uint32_t src_size)
 {
 	return cmp_compress_i16(ctx, dst, cap, src, src_size);
 }
 
 
-uint32_t compress_i16_in_i32_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
-				     const void *src, uint32_t src_size)
+static uint32_t compress_i16_in_i32_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
+					    const void *src, uint32_t src_size)
 {
 	return cmp_compress_i16_in_i32(ctx, dst, cap, src, src_size);
 }
+
+const struct cmp_test_fixture cmp_fixture_u16 = { compress_u16_wrapper, CMP_U16 };
+const struct cmp_test_fixture cmp_fixture_i16 = { compress_i16_wrapper, CMP_I16 };
+const struct cmp_test_fixture cmp_fixture_i16_in_i32 = { compress_i16_in_i32_wrapper,
+							 CMP_I16_IN_I32 };

@@ -135,15 +135,19 @@ struct test_env {
 struct test_env *make_env(struct cmp_params *params, uint32_t src_len);
 void free_env(struct test_env *e);
 
-uint32_t compress_u16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap, const void *src,
-			      uint32_t n);
-uint32_t compress_i16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap, const void *src,
-			      uint32_t n);
-uint32_t compress_i16_in_i32_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
-				     const void *src, uint32_t n);
 
-typedef uint32_t (*compress_func_t)(struct cmp_context *ctx, void *dst, uint32_t dst_capacity,
-				    const void *src, uint32_t src_size);
+/**
+ * @brief Test fixture bundling compression function with its metadata
+ */
+struct cmp_test_fixture {
+	uint32_t (*compress)(struct cmp_context *ctx, void *dst, uint32_t dst_capacity,
+			     const void *src, uint32_t src_size);
+	enum cmp_type dtype;
+};
+
+extern const struct cmp_test_fixture cmp_fixture_u16;
+extern const struct cmp_test_fixture cmp_fixture_i16;
+extern const struct cmp_test_fixture cmp_fixture_i16_in_i32;
 
 
 extern const uint16_t test_dummy_u16[2];
