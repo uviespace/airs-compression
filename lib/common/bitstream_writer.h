@@ -27,6 +27,12 @@
 
 #define CMP_DST_ALIGNMENT sizeof(uint64_t)
 
+#if defined(__BIG_ENDIAN)
+#  define BITSTREAM_IS_CPU_BIG_ENDIAN 1
+#elif defined(__LITTLE_ENDIAN)
+#  define BITSTREAM_IS_CPU_BIG_ENDIAN 0
+#endif
+
 
 /**
  * @brief This structure maintains the state of the bitstream writer
@@ -87,6 +93,20 @@ static __inline void put_be64_aligned(void *ptr, uint64_t val)
 {
 	val = cpu_to_be64(val);
 	*(uint64_t *)ptr = val;
+}
+
+
+/**
+ * @brief Stores a 16-bit integer as big-endian bytes
+ *
+ * @param ptr	2 byte aligned address to write
+ * @param val	value to write
+ */
+
+static __inline void put_be16_aligned(void *ptr, uint16_t val)
+{
+	val = cpu_to_be16(val);
+	*(uint16_t *)ptr = val;
 }
 
 
@@ -154,6 +174,127 @@ static __inline void bitstream_add_bits32(struct bitstream_writer *bs, uint32_t 
 		bs->bit_cap += 64 - nb_bits;
 	} else {
 		bs->error = CMP_ERROR(DST_TOO_SMALL);
+	}
+}
+
+
+/**
+ * @brief Write an array of 16-bit values as big-endian to the bitstream
+ *
+ * @note The bitstream must be 63 bit aligned before calling. Call
+ *	 bitstream_flush() first if needed
+ * @note This function uses sticky error handling. Once an error occurs, subsequent
+ *	 calls are ignored. Possible error conditions can be tested with
+ *	 bitstream_error() or bitstream_flush().
+ *
+ * @param bs		pointer to initialized bitstream_writer
+ * @param src16		source buffer of 16-bit values (native endianness)
+ * @param nb_samples	number of samples to write
+ */
+
+static __inline void bitstream_add_be16_array(struct bitstream_writer *bs, const int16_t *src16,
+					      uint32_t nb_samples)
+{
+	uint32_t i;
+
+	if (cmp_is_error_int(bitstream_error(bs)))
+		return;
+
+	if (bs->bit_cap != 64) {
+		bs->error = CMP_ERROR(INT_BITSTREAM);
+		return;
+	}
+
+	if (!src16) {
+		bs->error = CMP_ERROR(INT_BITSTREAM);
+		return;
+	}
+
+	if (nb_samples > (size_t)(bs->end - bs->ptr) / sizeof(int16_t)) {
+		bs->error = CMP_ERROR(DST_TOO_SMALL);
+		return;
+	}
+
+	if (BITSTREAM_IS_CPU_BIG_ENDIAN) {
+		/* Fast path: no conversion needed on big-endian systems */
+		memcpy(bs->ptr, src16, nb_samples * sizeof(int16_t));
+	} else {
+		uint8_t *p = bs->ptr;
+
+		for (i = 0; i < nb_samples; i++) {
+			put_be16_aligned(p, (uint16_t)src16[i]);
+			p += sizeof(int16_t);
+		}
+	}
+
+	/* update the cache that a following bitstream_add_bits32() can work */
+	{
+		uint32_t aligned_samples = nb_samples & ~3U;
+		uint32_t remainder = nb_samples & 3U;
+
+		bs->ptr += aligned_samples * sizeof(int16_t);
+		for (i = 0; i < remainder; i++)
+			bitstream_add_bits32(bs, (uint16_t)src16[aligned_samples + i], 16);
+	}
+}
+
+
+/**
+ * @brief Write an array of 16-bit values (stored in 32-bit containers) as big-endian
+ *
+ * Extracts the lower 16 bits from each 32-bit value and writes them in big-endian
+ * byte order
+ *
+ * @note The bitstream must be 64 bit aligned before calling. Call
+ *	 bitstream_flush() first if needed
+ * @note This function uses sticky error handling. Once an error occurs, subsequent
+ *	 calls are ignored. Possible error conditions can be tested with
+ *	 bitstream_error() or bitstream_flush().
+ *
+ * @param bs		pointer to initialized bitstream_writer
+ * @param src16_in_32	source buffer of 32-bit values containing 16-bit samples
+ *			(native endianness)
+ * @param nb_samples	number of samples to write
+ */
+
+static __inline void bitstream_add_be16_in_32_array(struct bitstream_writer *bs,
+						    const int32_t *src16_in_32, uint32_t nb_samples)
+{
+	uint32_t i;
+	uint8_t *p;
+
+	if (cmp_is_error_int(bitstream_error(bs)))
+		return;
+
+	if (bs->bit_cap != 64) {
+		bs->error = CMP_ERROR(INT_BITSTREAM);
+		return;
+	}
+
+	if (!src16_in_32) {
+		bs->error = CMP_ERROR(INT_BITSTREAM);
+		return;
+	}
+
+	if (nb_samples > (size_t)(bs->end - bs->ptr) / sizeof(int16_t)) {
+		bs->error = CMP_ERROR(DST_TOO_SMALL);
+		return;
+	}
+
+	p = bs->ptr;
+	for (i = 0; i < nb_samples; i++) {
+		put_be16_aligned(p, (uint16_t)(src16_in_32[i]));
+		p += sizeof(uint16_t);
+	}
+
+	/* update the cache that a following bitstream_add_bits32() can work */
+	{
+		uint32_t aligned_samples = nb_samples & ~3U;
+		uint32_t remainder = nb_samples & 3U;
+
+		bs->ptr += aligned_samples * sizeof(int16_t);
+		for (i = 0; i < remainder; i++)
+			bitstream_add_bits32(bs, (uint16_t)src16_in_32[aligned_samples + i], 16);
 	}
 }
 

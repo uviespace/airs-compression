@@ -194,6 +194,30 @@ uint32_t cmp_initialise(struct cmp_context *ctx, const struct cmp_params *params
 }
 
 
+/* fast shortcut for uncompressed data; assume model has sufficient size*/
+static void write_uncompressed(struct bitstream_writer *bs, const struct sample_desc *src_desc,
+			       int16_t *model)
+{
+	switch (src_desc->dtype) {
+	case CMP_I16:
+	case CMP_U16:
+		bitstream_add_be16_array(bs, src_desc->data, src_desc->num_samples);
+		if (model)
+			memcpy(model, src_desc->data, get_packed_size(src_desc));
+		break;
+	case CMP_I16_IN_I32:
+		bitstream_add_be16_in_32_array(bs, src_desc->data, src_desc->num_samples);
+		if (model) {
+			uint32_t i;
+
+			for (i = 0; i < src_desc->num_samples; i++)
+				model[i] = sample_read_i16(src_desc, i);
+		}
+		break;
+	}
+}
+
+
 /* Main compression loop */
 static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst_capacity,
 				const struct sample_desc *src_desc)
@@ -271,33 +295,39 @@ static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst
 	if (cmp_is_error_int(ret))
 		return ret;
 
-	compress_bound = cmp_compress_bound(get_packed_size(src_desc));
-	if (cmp_is_error_int(compress_bound))
-		compress_bound = ~0U;
+	if (selected_preprocessing == CMP_PREPROCESS_NONE &&
+	    selected_encoder_type == CMP_ENCODER_UNCOMPRESSED) {
+		write_uncompressed(&bs, src_desc, model);
+	} else {
+		compress_bound = cmp_compress_bound(get_packed_size(src_desc));
+		if (cmp_is_error_int(compress_bound))
+			compress_bound = ~0U;
 
-	preprocess = preprocessing_get_method(selected_preprocessing);
-	if (preprocess == NULL)
-		return CMP_ERROR(PARAMS_INVALID);
+		preprocess = preprocessing_get_method(selected_preprocessing);
+		if (preprocess == NULL)
+			return CMP_ERROR(PARAMS_INVALID);
 
-	n_values = preprocess->init(src_desc, ctx->work_buf, ctx->work_buf_size);
-	if (cmp_is_error_int(n_values))
-		return n_values;
+		n_values = preprocess->init(src_desc, ctx->work_buf, ctx->work_buf_size);
+		if (cmp_is_error_int(n_values))
+			return n_values;
 
-	for (i = 0; i < n_values; i++) {
-		int16_t const value = preprocess->process(i, src_desc, ctx->work_buf);
+		for (i = 0; i < n_values; i++) {
+			int16_t const value = preprocess->process(i, src_desc, ctx->work_buf);
 
-		cmp_encoder_encode_s16(&enc, value, &bs);
-		if (dst_capacity < compress_bound)
-			if (cmp_is_error_int(bitstream_error(&bs)))
-				break;
+			cmp_encoder_encode_s16(&enc, value, &bs);
+			if (dst_capacity < compress_bound)
+				if (cmp_is_error_int(bitstream_error(&bs)))
+					break;
 
-		if (model) {
-			if (ctx->sequence_number == 0)
-				model[i] = sample_read_i16(src_desc, i);
-			else
-				model[i] = update_model(sample_read_i16(src_desc, i), model[i],
-							(int)ctx->params.model_rate,
-							src_desc->dtype);
+			if (model) {
+				if (ctx->sequence_number == 0)
+					model[i] = sample_read_i16(src_desc, i);
+				else
+					model[i] = update_model(sample_read_i16(src_desc, i),
+								model[i],
+								(int)ctx->params.model_rate,
+								src_desc->dtype);
+			}
 		}
 	}
 
