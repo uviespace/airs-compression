@@ -11,7 +11,7 @@ struct sample_desc {
 	const void *data;
 	uint32_t num_samples;
 	uint8_t stride;
-	enum cmp_type type;
+	enum cmp_type dtype;
 };
 
 
@@ -44,7 +44,7 @@ static __inline uint32_t sample_read_src_init(struct sample_desc *src_desc, cons
 	src_desc->data = src;
 	src_desc->num_samples = src_size / stride;
 	src_desc->stride = stride;
-	src_desc->type = src_type;
+	src_desc->dtype = src_type;
 
 	return CMP_ERROR(NO_ERROR);
 }

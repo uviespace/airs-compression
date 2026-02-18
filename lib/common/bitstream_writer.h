@@ -108,12 +108,12 @@ static __inline uint32_t bitstream_error(const struct bitstream_writer *bs)
  * @brief Adds up to 32 bits to the bitstream
  *
  * @note This function writes bits into an internal cache, which is only flushed to
- *       the output buffer when full or when bitstream_flush() is explicitly called.
- *       As a result, after completing a sequence of writes, the caller **must** call
- *       bitstream_flush() to ensure all bits are properly written to the buffer.
- * @note This function uses sticky error handling - once an error occurs, subsequent
- *       calls are ignored. Possible error conditions can be tested with
- *       bitstream_error() or bitstream_flush().
+ *	 the output buffer when full or when bitstream_flush() is explicitly called.
+ *	 As a result, after completing a sequence of writes, the caller **must** call
+ *	 bitstream_flush() to ensure all bits are properly written to the buffer.
+ * @note This function uses sticky error handling. Once an error occurs, subsequent
+ *	 calls are ignored. Possible error conditions can be tested with
+ *	 bitstream_error() or bitstream_flush().
  *
  * @param bs		pointer to an initialised bitstream_writer structure
  * @param value		bits to write to the bitstream; must be "clean", meaning

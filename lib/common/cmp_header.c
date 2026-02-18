@@ -133,7 +133,7 @@ uint32_t cmp_hdr_checksum_int(const struct sample_desc *desc)
 	 * Fast path: on big-endian systems with contiguous data, we can hash
 	 * directly without byte swapping.
 	 */
-	if (!XXH_CPU_LITTLE_ENDIAN && (desc->type == CMP_I16 || desc->type == CMP_U16))
+	if (!XXH_CPU_LITTLE_ENDIAN && (desc->dtype == CMP_I16 || desc->dtype == CMP_U16))
 		return XXH32(desc->data, desc->num_samples * sizeof(uint16_t), CHECKSUM_SEED);
 
 	/*

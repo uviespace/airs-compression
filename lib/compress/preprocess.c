@@ -198,7 +198,7 @@ static void iwt_multi_level_decomposition_i16(const struct sample_desc *src_desc
 		return;
 	}
 
-	if (src_desc->type == CMP_I16_IN_I32) {
+	if (src_desc->dtype == CMP_I16_IN_I32) {
 		uint32_t i;
 		/*
 		 * For non-contiguous 16-bit samples stored in 32-bit words,
