@@ -37,7 +37,7 @@
 
 /* ====== Version Information ====== */
 #define CMP_VERSION_MAJOR   0 /**< major part of the version ID */
-#define CMP_VERSION_MINOR   6 /**< minor part of the version ID */
+#define CMP_VERSION_MINOR   7 /**< minor part of the version ID */
 #define CMP_VERSION_RELEASE 0 /**< release part of the version ID */
 
 /**
@@ -132,26 +132,9 @@ struct cmp_context {
 	void *work_buf;           /**< Pointer to the working buffer */
 	uint32_t work_buf_size;   /**< Size of the working buffer in bytes */
 	uint32_t model_size;      /**< Size of the model used in the model-based preprocessing */
-	uint64_t identifier;      /**< Identifier for the compression model */
+	uint32_t identifier;      /**< Identifier for the compression model */
 	uint8_t sequence_number; /**< Number of compression passes performed since the last reset */
 };
-
-
-/* ======  Setup Functions   ====== */
-/**
- * @brief Sets a custom function to retrieve the current timestamp
- *
- * This function allows the library to use a user-provided function for
- * generating model identifiers. The callback function must populate the
- * coarse and fine values that will be combined into a 48-bit identifier.
- *
- * @param get_current_timestamp_func	A function pointer that populates a
- *					coarse (32-bit) and fine (16-bit)
- *					timestamp. If NULL, the library reverts
- *					to its default internal monotonic counter
- */
-
-void cmp_set_timestamp_func(void (*get_current_timestamp_func)(uint32_t *coarse, uint16_t *fine));
 
 
 /* ====== Compression Helper Functions ====== */
@@ -189,13 +172,10 @@ uint32_t cmp_compress_bound(uint32_t packed_size);
  *
  * This macro is useful for (static) allocation of the compression destination
  * buffer when using uncompressed storage.
- * It calculates the worst-case size required for storing data in uncompressed
- * format, including the compression header and optional checksum.
  *
  * It helps prevent compression failures due to insufficient destination buffer
  * space in the following scenarios:
- * - When explicitly using uncompressed mode (CMP_PREPROCESS_NONE with
- *   CMP_ENCODER_UNCOMPRESSED)
+ * - When explicitly using uncompressed mode (CMP_ENCODER_UNCOMPRESSED)
  * - When uncompressed_fallback_enabled is set
  *
  * In all other compression scenarios, use cmp_compress_bound(), which provides
@@ -205,13 +185,12 @@ uint32_t cmp_compress_bound(uint32_t packed_size);
  *			except for cmp_compress_i16_in_i32() where it's half)
  *
  * @returns the buffer size needed for uncompressed storage, or SIZE_MAX if
- *	the source size is too large (exceeds CMP_HDR_MAX_COMPRESSED_SIZE
- *	after accounting for header and checksum overhead)
+ *	the source size is too large
  */
 
-#define CMP_UNCOMPRESSED_BOUND(packed_size)                                                  \
-	((packed_size) <= (CMP_HDR_MAX_COMPRESSED_SIZE - CMP_HDR_SIZE - CMP_CHECKSUM_SIZE) ? \
-		 (CMP_HDR_SIZE + (packed_size) + CMP_CHECKSUM_SIZE) :                        \
+#define CMP_UNCOMPRESSED_BOUND(packed_size)                            \
+	((packed_size) <= CMP_HDR_MAX_COMPRESSED_SIZE - CMP_HDR_SIZE ? \
+		 CMP_HDR_SIZE + (packed_size) :                        \
 		 SIZE_MAX)
 
 
@@ -343,5 +322,91 @@ uint32_t cmp_reset(struct cmp_context *ctx);
 
 void cmp_deinitialise(struct cmp_context *ctx);
 
+
+/* ======  Compression Header Functions   ====== */
+/**
+ * @brief Data type of the original uncompressed data
+ */
+
+enum cmp_type {
+	CMP_I16,        /**< Signed 16-bit integers */
+	CMP_I16_IN_I32, /**< Signed 16-bit integers packed in 32-bit words */
+	CMP_U16         /**< Unsigned 16-bit integers */
+};
+
+
+/**
+ * @brief Compression header fields
+ *
+ * @note This is not the on-disk format - use cmp_hdr_serialize() and
+ * cmp_hdr_deserialize() for conversion to/from the binary format.
+ */
+
+struct cmp_hdr {
+	uint16_t version;
+	uint32_t compressed_size;
+	uint32_t original_size;
+	uint32_t checksum;
+	uint32_t identifier;
+	uint8_t sequence_number;
+	enum cmp_preprocessing preprocessing;
+	enum cmp_encoder_type encoder_type;
+	uint32_t encoder_param;
+	uint32_t encoder_outlier;
+	enum cmp_type original_dtype;
+	uint32_t preprocess_param;
+};
+
+
+/**
+ * @brief Deserialize compression header
+ *
+ * @param buf		buffer containing the serialized header (may be a
+ *			compressed data buffer)
+ * @param buf_size	size of buffer
+ * @param hdr		pointer to header structure to fill
+ *
+ * @note Only the version field is valid for headers with version 0.6 and earlier.
+ *
+ * @returns the compression header size or an error, which can be checked using
+ *	cmp_is_error()
+ */
+
+uint32_t cmp_hdr_deserialize(const void *buf, uint32_t buf_size, struct cmp_hdr *hdr);
+
+
+/**
+ * @brief Computes the checksum in the header from the original uncompressed data
+ *
+ * @param checksum	pointer to the variable receiving the computed checksum
+ * @param src		pointer to the original uncompressed data buffer
+ * @param src_size	size of the data buffer in bytes
+ * @param src_type	type of the data; CMP_I16 and CMP_U16 are treated
+ *			identically for checksum purposes
+ *
+ * @returns an error code which can be checked using cmp_is_error()
+ */
+
+uint32_t cmp_hdr_checksum(uint32_t *checksum, const void *src, uint32_t src_size,
+			  enum cmp_type src_type);
+
+
+/**
+ * @brief Set the sequence identifier counter
+ *
+ * The identifier is part of the compression header to mark a compression
+ * sequence: a series of compressions that share the same model/state.
+ * It remains constant within a sequence (while the sequence number increments
+ * with each compression).
+ *
+ * Default start value is 0. When a program restarts, the identifier counter
+ * starts at 0 again, so identifiers can repeat across independent program
+ * executions. Use this function to choose a non-zero start value when you
+ * need to avoid collisions across independent executions.
+ *
+ * @param identifier	value to set the identifier counter
+ */
+
+void cmp_hdr_set_identifier(uint32_t identifier);
 
 #endif /* CMP_H */

@@ -16,7 +16,7 @@
 
 #include "test_common.h"
 #include "../lib/cmp_errors.h"
-#include "../lib/common/header_private.h"
+#include "../lib/cmp_header.h"
 
 
 const uint16_t test_dummy_u16[2] = { 0x0001, 0x0203 };
@@ -26,13 +26,8 @@ const int32_t test_dummy_i16_in_i32[2] = { 0x0001, 0x0203 };
 
 const void *cmp_hdr_get_cmp_data(const void *header)
 {
-	struct cmp_hdr hdr;
-	uint32_t hdr_size;
-
 	TEST_ASSERT_NOT_NULL(header);
-	hdr_size = cmp_hdr_deserialize(header, CMP_HDR_MAX_SIZE, &hdr);
-	TEST_ASSERT_CMP_SUCCESS(hdr_size);
-	return (const uint8_t *)header + hdr_size;
+	return (const uint8_t *)header + CMP_HDR_SIZE;
 }
 
 
@@ -155,16 +150,12 @@ struct test_env *make_env(struct cmp_params *params, uint32_t src_len)
 
 	TEST_ASSERT_CMP_SUCCESS(cmp_initialise(&e->ctx, params, e->work, work_len));
 
-	if (params->primary_preprocessing == CMP_PREPROCESS_NONE &&
-	    params->secondary_preprocessing == CMP_PREPROCESS_NONE) {
-		if (params->primary_encoder_type == CMP_ENCODER_UNCOMPRESSED &&
-		    params->secondary_encoder_type == CMP_ENCODER_UNCOMPRESSED) {
-			e->dst_cap = (uint32_t)CMP_UNCOMPRESSED_BOUND(src_len);
-		} else {
-			e->dst_cap = CMP_HDR_MAX_SIZE + src_len;
-		}
-	} else {
+	if (params->primary_encoder_type != CMP_ENCODER_UNCOMPRESSED ||
+	    (params->secondary_iterations > 0 &&
+	     params->secondary_encoder_type != CMP_ENCODER_UNCOMPRESSED)) {
 		e->dst_cap = cmp_compress_bound(src_len);
+	} else {
+		e->dst_cap = (uint32_t)CMP_UNCOMPRESSED_BOUND(src_len);
 	}
 	TEST_ASSERT_CMP_SUCCESS(e->dst_cap);
 	e->dst = t_malloc(e->dst_cap);
@@ -181,22 +172,27 @@ void free_env(struct test_env *e)
 }
 
 
-uint32_t compress_u16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap, const void *src,
-			      uint32_t src_size)
+static uint32_t compress_u16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
+				     const void *src, uint32_t src_size)
 {
 	return cmp_compress_u16(ctx, dst, cap, src, src_size);
 }
 
 
-uint32_t compress_i16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap, const void *src,
-			      uint32_t src_size)
+static uint32_t compress_i16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
+				     const void *src, uint32_t src_size)
 {
 	return cmp_compress_i16(ctx, dst, cap, src, src_size);
 }
 
 
-uint32_t compress_i16_in_i32_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
-				     const void *src, uint32_t src_size)
+static uint32_t compress_i16_in_i32_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
+					    const void *src, uint32_t src_size)
 {
 	return cmp_compress_i16_in_i32(ctx, dst, cap, src, src_size);
 }
+
+const struct cmp_test_fixture cmp_fixture_u16 = { compress_u16_wrapper, CMP_U16 };
+const struct cmp_test_fixture cmp_fixture_i16 = { compress_i16_wrapper, CMP_I16 };
+const struct cmp_test_fixture cmp_fixture_i16_in_i32 = { compress_i16_in_i32_wrapper,
+							 CMP_I16_IN_I32 };

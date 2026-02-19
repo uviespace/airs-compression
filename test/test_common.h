@@ -70,35 +70,34 @@ void assert_equal_cmp_error_internal(enum cmp_error expected_error, uint32_t cmp
 	do {                                                                                       \
 		struct cmp_hdr assert_hdr;                                                         \
 		TEST_ASSERT_CMP_SUCCESS(cmp_hdr_deserialize(compressed_data, size, &assert_hdr));  \
-		expected_hdr.version_flag = 1;                /* always expected */                \
-		expected_hdr.version_id = CMP_VERSION_NUMBER; /* always expected */                \
-		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.version_flag, assert_hdr.version_flag,      \
-					  "Version cmp lib flag mismatch");                        \
-		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.version_id, assert_hdr.version_id,          \
+		expected_hdr.version = CMP_VERSION_NUMBER;       /* always expected */             \
+		assert_hdr.identifier = expected_hdr.identifier; /* ignore this field */           \
+		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.version, assert_hdr.version,                \
 					  "header version ID mismatch");                           \
 		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.compressed_size,                            \
 					  assert_hdr.compressed_size,                              \
 					  "header compressed data size mismatch");                 \
 		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.original_size, assert_hdr.original_size,    \
 					  "header original size mismatch");                        \
-		assert_hdr.identifier = expected_hdr.identifier; /* ignore this field */           \
+		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.checksum, assert_hdr.checksum,              \
+					  "header checksum mismatch");                             \
 		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.sequence_number,                            \
 					  assert_hdr.sequence_number,                              \
 					  "header sequence number mismatch");                      \
 		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.preprocessing, assert_hdr.preprocessing,    \
 					  "header preprocessing mismatch");                        \
-		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.checksum_enabled,                           \
-					  assert_hdr.checksum_enabled,                             \
-					  "Checksum enable mismatch");                             \
 		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.encoder_type, assert_hdr.encoder_type,      \
 					  "header encoder mismatch");                              \
-		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.model_rate, assert_hdr.model_rate,          \
-					  "header model adaptation rate mismatch");                \
 		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.encoder_param, assert_hdr.encoder_param,    \
 					  "header encoder parameter mismatch");                    \
 		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.encoder_outlier,                            \
 					  assert_hdr.encoder_outlier,                              \
 					  "header outlier parameter mismatch");                    \
+		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.original_dtype, assert_hdr.original_dtype,  \
+					  "header original data type mismatch");                   \
+		TEST_ASSERT_EQUAL_MESSAGE(expected_hdr.preprocess_param,                           \
+					  assert_hdr.preprocess_param,                             \
+					  "header preprocess param mismatch");                     \
 		TEST_ASSERT_EQUAL_MEMORY_MESSAGE(&expected_hdr, &assert_hdr, sizeof(expected_hdr), \
 						 "header mismatch");                               \
 	} while (0)
@@ -136,15 +135,19 @@ struct test_env {
 struct test_env *make_env(struct cmp_params *params, uint32_t src_len);
 void free_env(struct test_env *e);
 
-uint32_t compress_u16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap, const void *src,
-			      uint32_t n);
-uint32_t compress_i16_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap, const void *src,
-			      uint32_t n);
-uint32_t compress_i16_in_i32_wrapper(struct cmp_context *ctx, void *dst, uint32_t cap,
-				     const void *src, uint32_t n);
 
-typedef uint32_t (*compress_func_t)(struct cmp_context *ctx, void *dst, uint32_t dst_capacity,
-				    const void *src, uint32_t src_size);
+/**
+ * @brief Test fixture bundling compression function with its metadata
+ */
+struct cmp_test_fixture {
+	uint32_t (*compress)(struct cmp_context *ctx, void *dst, uint32_t dst_capacity,
+			     const void *src, uint32_t src_size);
+	enum cmp_type dtype;
+};
+
+extern const struct cmp_test_fixture cmp_fixture_u16;
+extern const struct cmp_test_fixture cmp_fixture_i16;
+extern const struct cmp_test_fixture cmp_fixture_i16_in_i32;
 
 
 extern const uint16_t test_dummy_u16[2];

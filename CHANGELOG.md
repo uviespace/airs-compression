@@ -1,6 +1,13 @@
 [![AIRSPACE Logo](docs/AIRSPACE_Logo.svg)](https://github.com/uviespace/airs-compression)
 
 
+## [0.7.0](https://github.com/uviespace/airs-compression/compare/v0.6.0..v0.7.0) - 2026-02-18
+
+### 🚀 Features
+
+- *(cmp)* [**breaking**] Restructure compression header to fixed size format - ([cdf2067](https://github.com/uviespace/airs-compression/commit/cdf206779f634923cd49bad8d275ed4585b6efd1))
+- *(cmp)* Add original\_dtype to header and refactor test fixtures - ([eed42e9](https://github.com/uviespace/airs-compression/commit/eed42e96f1aa6d98ee83c453dc622d8e82c182f5))
+
 ## [0.6.0](https://github.com/uviespace/airs-compression/compare/v0.5.0..v0.6.0) - 2026-02-02
 
 ### 🚀 Features

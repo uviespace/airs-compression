@@ -23,35 +23,6 @@ static void print_hex_dump(const uint8_t *data, uint32_t size);
 
 
 /**
- * @brief dummy timestamp function
- *
- * This function provides a simple dummy implementation for a timestamp
- * provider. It increments a static counter on each call and provides the
- * result.
- *
- * @warning This function is intended for demonstration or testing purposes
- *          only. In real applications, use actual system timestamps.
- *
- * @param coarse pointer to store coarse timestamp (32-bit)
- * @param fine pointer to store fine timestamp (16-bit)
- */
-
-static void dummy_timestamp(uint32_t *coarse, uint16_t *fine)
-{
-	static uint32_t dummy_coarse_time;
-	static uint16_t dummy_fine_time;
-
-	if (dummy_fine_time == UINT16_MAX)
-		dummy_coarse_time += 1;
-	dummy_fine_time += 1;
-
-
-	*coarse = dummy_coarse_time;
-	*fine = dummy_fine_time;
-}
-
-
-/**
  * @brief demonstrate compression API usage
  */
 
@@ -77,10 +48,21 @@ static int simple_compression(void)
 
 
 	/*
-	 * Step 0: Setup Timestamp Function
-	 * Register your timestamp function callback.
+	 * Step 0: Set the sequence identifier starting value (optional)
+	 * The identifier in the compression header marks a compression sequence:
+	 * a series of compressions that share the same model/state. It remains
+	 * constant within a sequence while the sequence number increments with
+	 * each compression.
+	 *
+	 * Default start value is 0. When a program restarts, the identifier
+	 * counter starts at 0 again, so identifiers can repeat across independent
+	 * executions. Set this only when you need a non-zero start value to avoid
+	 * collisions across independent runs.
+	 *
+	 * This is only for demonstration; setting the identifier to a fixed
+	 * value is as effective as letting it start at 0.
 	 */
-	cmp_set_timestamp_func(dummy_timestamp);
+	cmp_hdr_set_identifier(0xDEADCAFE);
 
 
 	/*
@@ -230,7 +212,8 @@ static int simple_compression(void)
 	 * Compress the sample data using the configured compression parameters.
 	 * The first call will use the primary compression settings.
 	 */
-	{	/*
+	{
+		/*
 		 * Sample data to compress - adjust this to your actual data.
 		 * This example uses a simple array.
 		 */
@@ -270,8 +253,8 @@ static int simple_compression(void)
 		uint32_t sample_data2_size = sizeof(sample_data2);
 
 		/* This call will use secondary parameters (MODEL + GOLOMB_MULTI) */
-		cmp_size = cmp_compress_u16(&ctx, dst, dst_capacity, sample_data2,
-					    sample_data2_size);
+		cmp_size =
+			cmp_compress_u16(&ctx, dst, dst_capacity, sample_data2, sample_data2_size);
 		if (cmp_is_error(cmp_size)) { /* check compression result */
 			fprintf(stderr, "Data compression failed: %s. (Error Code: %u)\n",
 				cmp_get_error_message(cmp_size), cmp_get_error_code(cmp_size));

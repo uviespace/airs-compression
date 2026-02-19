@@ -13,8 +13,8 @@
 #include "test_common.h"
 
 #include "../lib/cmp.h"
+#include "../lib/cmp_header.h"
 #include "../lib/cmp_errors.h"
-#include "../lib/common/header_private.h"
 
 
 void test_successful_compression_initialisation_without_work_buf(void)
@@ -136,6 +136,7 @@ void test_ignore_invalid_secondary_preprocessing_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
 	}
 }
@@ -192,6 +193,7 @@ void test_ignore_invalid_secondary_encodder_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
 	}
 }
@@ -237,7 +239,7 @@ void test_detect_invalid_primary_golomb_encoder_parameter(void)
 void test_ignore_invalid_primary_golomb_encoder_parameter_when_not_used(void)
 {
 	const uint16_t src[2] = { 0x0001, 0x0203 };
-	DST_ALIGNED_U8 dst[CMP_HDR_MAX_SIZE + sizeof(src)];
+	DST_ALIGNED_U8 dst[CMP_HDR_SIZE + sizeof(src)];
 	struct cmp_params par = { 0 };
 	struct cmp_context ctx;
 	uint32_t return_val, cmp_size;
@@ -256,6 +258,7 @@ void test_ignore_invalid_primary_golomb_encoder_parameter_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		expected_hdr.preprocessing = CMP_PREPROCESS_DIFF;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
 	}
@@ -289,8 +292,8 @@ void test_detect_invalid_secondary_golomb_encoder_parameter(void)
 void test_ignore_invalid_secondary_golomb_encoder_parameter_when_not_used(void)
 {
 	const uint16_t src[2] = { 0x0001, 0x0203 };
-	DST_ALIGNED_U8 dst[CMP_HDR_MAX_SIZE + sizeof(src)];
-	DST_ALIGNED_U8 dst2[CMP_HDR_MAX_SIZE + sizeof(src)];
+	DST_ALIGNED_U8 dst[CMP_HDR_SIZE + sizeof(src)];
+	DST_ALIGNED_U8 dst2[CMP_HDR_SIZE + sizeof(src)];
 	struct cmp_params par = { 0 };
 	struct cmp_context ctx;
 	uint32_t return_val, cmp_size, cmp_size2;
@@ -313,7 +316,9 @@ void test_ignore_invalid_secondary_golomb_encoder_parameter_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		expected_hdr.preprocessing = CMP_PREPROCESS_DIFF;
+		expected_hdr.preprocess_param = 1;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
 		expected_hdr.sequence_number = 1;
 		TEST_ASSERT_CMP_HDR(dst2, cmp_size2, expected_hdr);
@@ -342,7 +347,7 @@ void test_detects_invalid_model_rate(void)
 void test_ignore_invalid_model_rate_when_not_used(void)
 {
 	const uint16_t src[2] = { 0x0001, 0x0203 };
-	DST_ALIGNED_U8 dst[CMP_HDR_MAX_SIZE + sizeof(src)];
+	DST_ALIGNED_U8 dst[CMP_HDR_SIZE + sizeof(src)];
 	uint16_t work_buf[4];
 	struct cmp_params params = { 0 };
 	struct cmp_context ctx;
@@ -363,7 +368,9 @@ void test_ignore_invalid_model_rate_when_not_used(void)
 
 		expected_hdr.compressed_size = cmp_size;
 		expected_hdr.original_size = sizeof(src);
+		expected_hdr.original_dtype = CMP_U16;
 		expected_hdr.preprocessing = CMP_PREPROCESS_DIFF;
+		expected_hdr.preprocess_param = 1;
 		TEST_ASSERT_CMP_HDR(dst, cmp_size, expected_hdr);
 	}
 }
