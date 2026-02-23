@@ -13,10 +13,6 @@
 #ifndef CMP_HEADER_H
 #define CMP_HEADER_H
 
-#include <stdint.h>
-
-#include "common/compiler.h"
-
 
 /*
  * Bit length of the different header fields
@@ -53,8 +49,8 @@
 /*
  * Maximum values that can be stored in the size fields
  */
-#define CMP_HDR_MAX_COMPRESSED_SIZE ((1ULL << CMP_HDR_BITS_COMPRESSED_SIZE) - 1)
-#define CMP_HDR_MAX_ORIGINAL_SIZE   ((1ULL << CMP_HDR_BITS_ORIGINAL_SIZE) - 1)
+#define CMP_HDR_MAX_COMPRESSED_SIZE ((1UL << CMP_HDR_BITS_COMPRESSED_SIZE) - 1)
+#define CMP_HDR_MAX_ORIGINAL_SIZE   ((1UL << CMP_HDR_BITS_ORIGINAL_SIZE) - 1)
 
 
 /** Size of the compression header in bytes */
@@ -65,6 +61,5 @@
 	  CMP_HDR_BITS_ENCODER_OUTLIER + CMP_HDR_BITS_ORIGINAL_DTYPE +                          \
 	  CMP_HDR_BITS_PREPROCESS_PARAM) /                                                      \
 	 8)
-compile_time_assert(CMP_HDR_SIZE == 24, cmp_header_size_must_be_24_bytes);
 
 #endif /* CMP_HEADER_H */

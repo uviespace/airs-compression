@@ -16,10 +16,14 @@
 #include "../cmp.h"
 #include "sample_reader.h"
 #include "bitstream_writer.h"
+#include "compiler.h"
 
 
 /** Seed value used for initializing the checksum computation, arbitrarily chosen*/
 #define CHECKSUM_SEED 419764627
+
+
+compile_time_assert(CMP_HDR_SIZE == 24, cmp_header_size_must_be_24_bytes);
 
 
 /**

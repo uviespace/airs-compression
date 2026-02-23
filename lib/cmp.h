@@ -38,7 +38,7 @@
 /* ====== Version Information ====== */
 #define CMP_VERSION_MAJOR   0 /**< major part of the version ID */
 #define CMP_VERSION_MINOR   7 /**< minor part of the version ID */
-#define CMP_VERSION_RELEASE 1 /**< release part of the version ID */
+#define CMP_VERSION_RELEASE 2 /**< release part of the version ID */
 
 /**
  * @brief Complete version number
