@@ -22,7 +22,7 @@
 #include "../lib/common/bithacks.h"
 #include "../lib/common/compiler.h"
 
-ARENA_NORETURN static void bench_oom(void)
+CMP_NORETURN static void bench_oom(void)
 {
 	fprintf(stderr, "Out of Memory!\n");
 	exit(3);

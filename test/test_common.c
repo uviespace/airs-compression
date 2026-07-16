@@ -222,7 +222,7 @@ struct arena *clear_test_arena(void)
 
 	arena_set_oom_handler(test_oom_handler);
 
-	memset(mem, 0x1D, sizeof(mem)); /* poison arena memory */
+	/* Reset the arena and poison mem buffer via the configured poison hook. */
 	a = arena_init(mem, sizeof(mem));
 	return &a;
 }

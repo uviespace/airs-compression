@@ -186,4 +186,51 @@
 #  define ALIGNED_TYPE(n, t) t
 #endif
 
+
+/** @brief Marks a function that must not return. */
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#  define CMP_NORETURN [[noreturn]]
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#  define CMP_NORETURN _Noreturn
+#elif defined(__GNUC__) || defined(__clang__)
+#  define CMP_NORETURN __attribute__((noreturn))
+#elif defined(_MSC_VER)
+#  define CMP_NORETURN __declspec(noreturn)
+#else
+#  define CMP_NORETURN
+#endif
+
+
+/** @brief Whether this translation unit is instrumented with ASan (0 or 1). */
+
+#if defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define CMP_ASAN_ENABLED 1
+#  endif
+#endif
+#ifndef CMP_ASAN_ENABLED
+#  if defined(__SANITIZE_ADDRESS__)
+#    define CMP_ASAN_ENABLED 1
+#  else
+#    define CMP_ASAN_ENABLED 0
+#  endif
+#endif
+
+
+/** @brief Whether this translation unit is instrumented with MSan (0 or 1). */
+
+#if defined(__has_feature)
+#  if __has_feature(memory_sanitizer)
+#    define CMP_MSAN_ENABLED 1
+#  endif
+#endif
+#ifndef CMP_MSAN_ENABLED
+#  if defined(__SANITIZE_MEMORY__)
+#    define CMP_MSAN_ENABLED 1
+#  else
+#    define CMP_MSAN_ENABLED 0
+#  endif
+#endif
+
 #endif /*  COMPILER_H */
