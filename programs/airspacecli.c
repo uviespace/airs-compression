@@ -224,9 +224,11 @@ static void print_usage(FILE *stream, const char *program_name)
 	LOG_F(stream, "\nOptions:\n");
 	LOG_F(stream, "  -c, --compress    Compress input files\n");
 	LOG_F(stream, "  -o OUTPUT         Write output to OUTPUT\n");
+	LOG_F(stream, "  -t, --test        Test compressed file integrity\n");
 	LOG_F(stream, "  -q, --quiet       Decrease verbosity\n");
 	LOG_F(stream, "  -v, --verbose     Increase verbosity\n");
 	LOG_F(stream, "  --identifier ID   Set sequence identifier\n");
+	LOG_F(stream, "  --state-dir DIR   Use decompression state directory DIR\n");
 	LOG_F(stream, "  --[no]color       Print color codes in output\n");
 	LOG_F(stream, "  -V, --version     Display version\n");
 	LOG_F(stream, "  -h, --help        Display this help\n");
@@ -277,6 +279,7 @@ int main(int argc, char *argv[])
 		{ "params",                 required_argument, NULL, 'p'                      },
 		{ "identifier",             required_argument, NULL, IDENTIFIER_OPT           },
 		{ "stdout",                 no_argument,       NULL, STDOUT_OPT               },
+		{ "test",                   no_argument,       NULL, 't'                      },
 		{ "verbose",                no_argument,       NULL, 'v'                      },
 		{ "quiet",                  no_argument,       NULL, 'q'                      },
 		{ "color",                  no_argument,       NULL, COLOR_OPT                },
@@ -314,7 +317,7 @@ int main(int argc, char *argv[])
 	program_name = argv[0];
 	log_setup_color();
 
-	while ((ch = getopt_long(argc, argv, "Vvqhco:", long_options, NULL)) != -1) {
+	while ((ch = getopt_long(argc, argv, "Vvqhcto:", long_options, NULL)) != -1) {
 		switch (ch) {
 		case 'c':
 			mode = MODE_COMPRESS;
@@ -342,6 +345,9 @@ int main(int argc, char *argv[])
 		}
 		case STDOUT_OPT:
 			output_filename = STD_OUT_MARK_S8;
+			break;
+		case 't':
+			output_filename = NULL_MARK_S8;
 			break;
 		case 'v':
 			log_increase_verbosity();

@@ -43,7 +43,9 @@ Options:
   -o OUTPUT         Write output to OUTPUT
   -q, --quiet       Decrease verbosity
   -v, --verbose     Increase verbosity
+  -t, --test        Test compressed file integrity
   --identifier ID   Set sequence identifier
+  --state-dir DIR   Use decompression state directory DIR
   --[no]color       Print color codes in output
   -V, --version     Display version
   -h, --help        Display this help
