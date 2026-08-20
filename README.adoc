@@ -6,6 +6,7 @@ ifdef::env-github[]
 :warning-caption: :warning:
 endif::[]
 :imagesdir: docs
+:page_id: readme
 
 image::AIRSPACE_Logo.svg[]
 :toc: macro
@@ -25,7 +26,7 @@ The API interface is currently in development and may change in future versions.
 toc::[]
 
 == Features
-* Optimised for AIRS scientific data
+* Optimised for scientific data
 * Support for multiple compression configurations
 * Comprehensive error handling with detailed error codes
 * Portable:
@@ -55,7 +56,7 @@ For quick implementation guidance, explore our collection of example code in
 the link:examples/[`examples`] directory.
 
 === Command Line Interface
-A command-line utility is available for compressing and decompressing AIRS data files.
+A command-line utility is available for compressing and decompressing scientific data.
 See the xref:programs/README.adoc[CLI documentation] for details.
 
 == Documentation
@@ -77,7 +78,7 @@ See the xref:programs/README.adoc[CLI documentation] for details.
 
 === Contact Information
 * *Maintainer*: Dominik Loidolt
-* *e-mail*: mailto:dominik.loidolt@univie.ac.at[,Question about AIRS Data Compression]
+* *e-mail*: mailto:dominik.loidolt@univie.ac.at[,Question about AIRSPACE Data Compression]
 
 == License
 This project is licensed under the GNU General Public License v2.0. See the

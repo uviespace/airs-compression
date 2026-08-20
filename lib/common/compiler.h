@@ -18,9 +18,11 @@
  *
  * Derived from Linux "Features Test Macro" header
  * Use them like this:
- *	#if GIT_GNUC_PREREQ (2,8)
+ * @code{.c}
+ *	#if CMP_GNUC_PREREQ(2, 8)
  *	... code requiring gcc 2.8 or later ...
  *	#endif
+ * @endcode
  */
 
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
@@ -40,7 +42,7 @@
 
 
 /**
- * @brieg assert a build-time dependency, as an expression.
+ * @brief Assert a build-time dependency, as an expression.
  *
  * @param cond	the compile-time condition which must be true
  *
@@ -48,9 +50,11 @@
  * by the compiler. This can be used in an expression: its value is "0".
  *
  * Example:
+ * @code{.c}
  *	#define foo_to_char(foo)					\
  *		 ((char *)(foo)						\
  *		  + BUILD_ASSERT_OR_ZERO(offsetof(struct foo, string) == 0))
+ * @endcode
  */
 
 #define BUILD_ASSERT_OR_ZERO(cond) (sizeof(char[1 - (2 * !(cond))]) - 1)

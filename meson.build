@@ -98,4 +98,5 @@ summary({
   'Asciidoctor found' : asciidoctor.found(),
   'Doxygen found' : doxygen.found(),
   'dot found' : dot.found(),
+  'pandoc found' : pandoc.found(),
 }, section : 'Auto-detected features')

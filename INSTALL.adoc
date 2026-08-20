@@ -1,5 +1,6 @@
 = Installation Guide
 :toc:
+:page_id: installation_guide
 
 == Prerequisites
 Before you begin, ensure you have the following tools and dependencies
@@ -143,8 +144,10 @@ To build the compression library, run:
 ----
 ninja lib/libcmp.a
 ----
-The resulting library `cmplib.a` will be located in the `lib` folder of your
+The resulting library `libcmp.a` will be located in the `lib` folder of your
 build directory.
+Continue with the xref:README.adoc[project overview and usage examples] to start
+using the library.
 
 === Build the AIRSPACE CLI
 To build the xref:programs/README.adoc[CLI utility], run:
@@ -156,6 +159,27 @@ ninja programs/airspace
 The `airspace` binary will be located in the `programs` folder of your build
 directory.
 
+=== Build the Documentation
+Building documentation requires the following tools:
+
+* https://www.doxygen.nl[Doxygen] for the API documentation generator
+* https://pandoc.org[Pandoc] to convert AsciiDoc guides to Markdown for inclusion
+  in the documentation (optional, but recommended)
+* https://graphviz.org[Graphviz] (`dot`) to generate class and dependency diagrams
+  (optional)
+
+To build the API documentation run in your build directory:
+
+[source,bash]
+----
+ninja docs/html
+----
+
+The generated HTML documentation will be located in the `docs/html` subdirectory
+of your build directory.
+
+==== Documentation Dependencies
+
 === Build All Targets
 To build all targets, simply run:
 
@@ -163,7 +187,6 @@ To build all targets, simply run:
 ----
 ninja
 ----
-
 
 == Testing
 
