@@ -98,7 +98,7 @@ struct os_load file_read_be16(struct arena *perm, struct s8 path, enum file_flag
 	if (r.status != OS_OK)
 		return r;
 
-	if (r.size % 2) {
+	if (!is_multiple_of((uint32_t)r.size, 2)) {
 		LOG_ERROR("%.*s: file size not a multiple of 2", (int)path.len, path.s);
 		r.status = OS_IOERR;
 		return r;
@@ -174,7 +174,7 @@ int file_save_be16(struct arena scratch, struct s8 path, const uint16_t *buf, ui
 
 	assert(buf);
 	assert(buf_size);
-	assert(buf_size % sizeof(*buf) == 0);
+	assert(is_multiple_of(buf_size, sizeof(*buf)));
 
 	for (i = 0; i < samples; i++)
 		tmp[i] = cpu_to_be16(buf[i]);

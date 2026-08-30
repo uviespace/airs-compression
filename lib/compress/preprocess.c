@@ -303,7 +303,7 @@ static uint32_t iwt_init(const struct sample_desc *src_desc, void *work_buf, uin
 		return CMP_ERROR(WORK_BUF_NULL);
 	if (work_buf_size < iwt_get_work_buf_size(src_desc->num_samples))
 		return CMP_ERROR(WORK_BUF_TOO_SMALL);
-	if ((uintptr_t)work_buf & (sizeof(*pre_cal_coefficient) - 1))
+	if (!is_aligned(work_buf, sizeof(*pre_cal_coefficient)))
 		return CMP_ERROR(WORK_BUF_UNALIGNED);
 
 	iwt_multi_level_decomposition_i16(src_desc, pre_cal_coefficient, src_desc->num_samples);
@@ -363,7 +363,7 @@ static uint32_t model_init(const struct sample_desc *src_desc, void *work_buf,
 		return CMP_ERROR(WORK_BUF_NULL);
 	if (work_buf_size < model_get_work_buf_size(src_desc->num_samples))
 		return CMP_ERROR(WORK_BUF_TOO_SMALL);
-	if ((uintptr_t)work_buf & (sizeof(uint16_t) - 1))
+	if (!is_aligned(work_buf, sizeof(uint16_t)))
 		return CMP_ERROR(WORK_BUF_UNALIGNED);
 
 	return src_desc->num_samples;

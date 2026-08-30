@@ -150,7 +150,7 @@ uint32_t cmp_initialise(struct cmp_context *ctx, const struct cmp_params *params
 		if (work_buf_size == 0)
 			return CMP_ERROR(WORK_BUF_TOO_SMALL);
 
-		if ((uintptr_t)work_buf & (sizeof(uint16_t) - 1))
+		if (!is_aligned(work_buf, sizeof(uint16_t)))
 			return CMP_ERROR(WORK_BUF_UNALIGNED);
 	}
 

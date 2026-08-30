@@ -30,6 +30,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include "../lib/common/bithacks.h"
+
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #  define ARENA_NORETURN [[noreturn]]
 #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
@@ -120,7 +122,7 @@ static __inline void *arena_alloc(struct arena *a, ptrdiff_t count, ptrdiff_t si
 
 	assert(count >= 0);
 	assert(size > 0);
-	assert(align > 0 && (align & (align - 1)) == 0 && "Alignment must be a power of two");
+	assert(align > 0 && is_power_of_two((size_t)align));
 
 	padding = (ptrdiff_t)(-(uintptr_t)a->beg & (uintptr_t)(align - 1));
 	available = a->end - a->beg - padding;
@@ -164,7 +166,7 @@ static __inline ptrdiff_t arena_remaining(struct arena a, ptrdiff_t align)
 {
 	ptrdiff_t padding, available;
 
-	assert(align > 0 && (align & (align - 1)) == 0 && "Alignment must be a power of two");
+	assert(align > 0 && is_power_of_two((size_t)align));
 
 	if (!a.beg || !a.end)
 		return 0;

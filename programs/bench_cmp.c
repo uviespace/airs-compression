@@ -19,6 +19,7 @@
 #include "clock.h"
 #include "fgs_frames.h"
 #include "arena.h"
+#include "../lib/common/bithacks.h"
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
@@ -157,13 +158,11 @@ static uint32_t cal_dst_cap(uint32_t src_size, enum cmp_type src_dtype,
 
 static int ptr_alignment(const void *ptr)
 {
-	uintptr_t addr = (uintptr_t)ptr;
-
-	if ((addr % 8) == 0)
+	if (is_aligned(ptr, 8))
 		return 8;
-	if ((addr % 4) == 0)
+	if (is_aligned(ptr, 4))
 		return 4;
-	if ((addr % 2) == 0)
+	if (is_aligned(ptr, 2))
 		return 2;
 
 	return 1;

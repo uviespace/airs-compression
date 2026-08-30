@@ -25,6 +25,7 @@
 #include "../cmp.h"
 #include "../common/err_private.h"
 #include "../common/byteorder.h"
+#include "../common/bithacks.h"
 
 #ifdef __LITTLE_ENDIAN
 #  define BITSTREAM_IS_CPU_LITTLE_ENDIAN 1
@@ -81,7 +82,7 @@ static __inline uint32_t bitstream_writer_init(struct bitstream_writer *bs, void
 
 	if (!dst)
 		return bs->error = CMP_ERROR(DST_NULL);
-	if ((uintptr_t)dst & (CMP_DST_ALIGNMENT - 1))
+	if (!is_aligned(dst, CMP_DST_ALIGNMENT))
 		return bs->error = CMP_ERROR(DST_UNALIGNED);
 
 	bs->cache = 0;
@@ -248,7 +249,7 @@ static __inline void bitstream_add_bytes(struct bitstream_writer *bs, const uint
 	if (cmp_is_error_int(bitstream_error(bs)))
 		return;
 
-	if (bs->bit_cap % 8) {
+	if (!is_multiple_of(bs->bit_cap, 8)) {
 		bs->error = CMP_ERROR(INT_BITSTREAM);
 		return;
 	}
@@ -276,21 +277,6 @@ static __inline void bitstream_add_bytes(struct bitstream_writer *bs, const uint
 
 	for (; i < nb_bytes; i++)
 		bitstream_add_bits32(bs, src8[i], 8);
-}
-
-
-/**
- * @brief Check if a pointer is aligned to a given boundary
- *
- * @param ptr        Pointer to check
- * @param alignment  Alignment boundary (must be power of 2)
- *
- * @return 1 if aligned, 0 otherwise
- */
-
-static __inline int bitstream_is_aligned(const void *ptr, size_t alignment)
-{
-	return ((uintptr_t)ptr & (alignment - 1)) == 0;
 }
 
 
@@ -327,7 +313,7 @@ static __inline void bitstream_add_be16_array(struct bitstream_writer *bs, const
 		return;
 	}
 
-	if (!bitstream_is_aligned(bs->ptr, CMP_DST_ALIGNMENT)) {
+	if (!is_aligned(bs->ptr, CMP_DST_ALIGNMENT)) {
 		bs->error = CMP_ERROR(INT_BITSTREAM);
 		return;
 	}
@@ -347,7 +333,7 @@ static __inline void bitstream_add_be16_array(struct bitstream_writer *bs, const
 	dst = bs->ptr;
 
 #if defined(__GNUC__) || defined(__clang__)
-	if (bitstream_is_aligned(src16, sizeof(uint64_t))) {
+	if (is_aligned(src16, sizeof(uint64_t))) {
 		/* 1 ldd + 1 std per 8 output bytes; ~25% faster than 2 aligned path */
 		typedef uint64_t __attribute__((may_alias)) alias_u64;
 		SPARC_VOLATILE_GCC const alias_u64 *src64 = (const alias_u64 *)(const void *)src16;
@@ -363,7 +349,7 @@ static __inline void bitstream_add_be16_array(struct bitstream_writer *bs, const
 			put_be64_aligned(dst, s0123);
 			dst += sizeof(uint64_t);
 		}
-	} else if (bitstream_is_aligned(src16, sizeof(uint32_t))) {
+	} else if (is_aligned(src16, sizeof(uint32_t))) {
 		/* 2 ld + 1 std per 8 output bytes; ~13% faster than 2 aligned path*/
 		typedef uint32_t __attribute__((may_alias)) alias_u32;
 		const alias_u32 *src32 = (const alias_u32 *)(const void *)src16;
@@ -470,7 +456,7 @@ static __inline void bitstream_add_be16_in_32_array(struct bitstream_writer *bs,
 		return;
 	}
 
-	if (!bitstream_is_aligned(bs->ptr, CMP_DST_ALIGNMENT)) {
+	if (!is_aligned(bs->ptr, CMP_DST_ALIGNMENT)) {
 		bs->error = CMP_ERROR(INT_BITSTREAM);
 		return;
 	}
@@ -487,7 +473,7 @@ static __inline void bitstream_add_be16_in_32_array(struct bitstream_writer *bs,
 	dst = bs->ptr;
 
 #if defined(__GNUC__) || defined(__clang__)
-	if (bitstream_is_aligned(src16_in_32, sizeof(uint64_t))) {
+	if (is_aligned(src16_in_32, sizeof(uint64_t))) {
 		/* On GR712RC: 15% faster as the 4 byte aligned processing */
 		typedef uint64_t __attribute__((may_alias)) alias_u64;
 		SPARC_VOLATILE_GCC const alias_u64 *src64 =

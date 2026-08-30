@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <stddef.h>
 
 #include "compiler.h"
 
@@ -39,6 +40,68 @@ static __inline uint32_t min_u32(uint32_t a, uint32_t b)
 static __inline uint64_t min_u64(uint64_t a, uint64_t b)
 {
 	return a < b ? a : b;
+}
+
+
+/**
+ * @brief Checks whether an unsigned integer is a power of two
+ *
+ * Zero is not a power of two.
+ * @see https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+ *
+ * @param n	unsigned integer to check
+ * @returns 1 if @p n is a power of two, 0 otherwise
+ */
+static __inline int is_power_of_two(size_t n)
+{
+	return n != 0 && (n & (n - 1)) == 0;
+}
+
+
+/**
+ * @brief Checks whether a pointer is aligned to a power-of-two boundary
+ *
+ * An alignment of zero or an alignment that is not a power of two is
+ * considered invalid and returns false.
+ *
+ * @param ptr		pointer to check
+ * @param alignment	alignment boundary; must be a power of two
+ * @returns 1 if aligned, 0 otherwise
+ */
+static __inline int is_aligned(const void *ptr, size_t alignment)
+{
+	uintptr_t mask;
+
+	if (!is_power_of_two(alignment))
+		return 0;
+
+	mask = (uintptr_t)alignment - 1;
+	return ((uintptr_t)ptr & mask) == 0;
+}
+
+
+/**
+ * @brief Checks whether an unsigned integer is a multiple of another
+ *
+ * This function is equivalent to @c n % multiple == 0, except that it does
+ * not evaluate a modulo operation when @p multiple is zero. In that case,
+ * zero is a multiple of zero, while any non-zero value is not.
+ *
+ * @param n		integer to check
+ * @param multiple	multiple to check against
+ * @returns 1 if @p n is a multiple, 0 otherwise
+ *
+ * Examples:
+ * @code
+ * is_multiple_of(6, 2); // 1
+ * is_multiple_of(5, 2); // 0
+ * is_multiple_of(0, 0); // 1
+ * is_multiple_of(6, 0); // 0
+ * @endcode
+ */
+static __inline int is_multiple_of(uint32_t n, uint32_t multiple)
+{
+	return multiple == 0 ? n == 0 : n % multiple == 0;
 }
 
 

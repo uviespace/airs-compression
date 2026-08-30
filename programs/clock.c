@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include "clock.h"
+#include "../lib/common/bithacks.h"
 
 uint64_t clock_get_elapsed_nano(uint64_t start_time)
 {
@@ -257,7 +258,7 @@ static int32_t grtimer_longcount_start(struct grtimer_unit *rtu, uint32_t scaler
 	grtimer_enable_latch(rtu);
 
 	/* not an integer multiple, clock will drift */
-	if (fine_ticks_per_sec % scaler_reload)
+	if (!is_multiple_of(fine_ticks_per_sec, scaler_reload))
 		return -1;
 
 	return 0;
