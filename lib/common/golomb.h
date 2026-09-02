@@ -29,14 +29,15 @@ enum {
 
 
 /**
- * @brief Calculates the first value that cannot be encoded with golomb_encode()
+ * @brief Calculates the maximum safe outlier threshold
  *
  * @param g_par		Golomb parameter
  * @param n_bits	number of bits used to represent uncompressed samples
  * @param encoder_type	Golomb encoder type used
  *
- * @returns the first value that cannot be encoded with golomb_encode() due to
- *	exceeding the maximum codeword length, or 0 on failure
+ * @returns the largest outlier threshold for which all Golomb codewords emitted
+ *	by the selected encoder fit within the maximum codeword length, or 0 on
+ *	failure
  */
 
 static __inline uint32_t golomb_upper_bound(uint32_t g_par, enum cmp_encoder_type encoder_type,
@@ -75,7 +76,7 @@ static __inline uint32_t golomb_upper_bound(uint32_t g_par, enum cmp_encoder_typ
 	 */
 	first_invalid_value = cutoff + (first_invalid_group * g_par);
 
-	/* 4) MULTI variant: Reserve space for all used multi escape symbols */
+	/* Reserve space for all used multi-escape symbols. */
 	if (encoder_type == CMP_ENCODER_GOLOMB_MULTI) {
 		uint32_t num_escape_symbols = (n_bits + 1) / 2;
 
@@ -83,6 +84,9 @@ static __inline uint32_t golomb_upper_bound(uint32_t g_par, enum cmp_encoder_typ
 			first_invalid_value -= num_escape_symbols;
 		else
 			return 0;
+	} else if (encoder_type == CMP_ENCODER_GOLOMB_ZERO) {
+		/* Zero is reserved as the escape symbol */
+		first_invalid_value--;
 	}
 
 	return first_invalid_value;
