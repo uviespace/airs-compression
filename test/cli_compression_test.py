@@ -76,7 +76,6 @@ class TestCompression(unittest.TestCase):
     def test_compress_data_from_stdin_to_stdout(self):
         for arg in [["-"], []]:
             with self.subTest(arg=arg):
-
                 result = self.airspace(["-c"] + arg, stdin=DATA_FILE1)
 
                 self.assertCli(

@@ -6,7 +6,7 @@
 Before you begin, ensure you have the following tools and dependencies
 installed.
 
-=== Install Python 3.7+ and Git
+=== Install Python 3.10+ and Git
 On Linux, Python and Git are typically pre-installed.
 On macOS and Windows, you can use the https://www.python.org/downloads[official
 Python installer].

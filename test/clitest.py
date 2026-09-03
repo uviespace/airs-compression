@@ -16,7 +16,6 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-from typing import List, Optional, Union
 
 SCRATCH_DIR_NAME = "scratch"
 
@@ -30,13 +29,13 @@ class CliTest:
     test environments and running CLI commands.
     """
 
-    cli_path: Optional[Path] = None
+    cli_path: Path | None = None
     test_root: Path = Path.cwd()
     cli_cwd = None
     # preserve_test_artifacts: bool = False
 
     def run_cli(
-        self, args: Union[None, str, List[str]] = None, stdin=None
+        self, args: None | str | list[str] = None, stdin=None
     ) -> subprocess.CompletedProcess:
         """
             Execute the CLI executable with specified arguments.
@@ -97,8 +96,8 @@ class CliTest:
 def assertCli(
     self,
     result: subprocess.CompletedProcess,
-    stdout_exp: Union[str, bytes] = "",
-    stderr_exp: Union[str, bytes] = "",
+    stdout_exp: str | bytes = "",
+    stderr_exp: str | bytes = "",
     returncode_exp: int = RETURN_SUCCESS,
     stdout_match_mode: str = "exact",
     stderr_match_mode: str = "exact",
@@ -173,8 +172,8 @@ def assertCli(
         stderr_exp,
         result.stderr,
         f"stderr mismatch\n{error_context}"
-        f"Expected: {repr(stderr_exp)} ({stderr_match_mode})\n"
-        f"Actual:   {repr(result.stderr)}",
+        f"Expected: {stderr_exp!r} ({stderr_match_mode})\n"
+        f"Actual:   {result.stderr!r}",
     )
 
     if stdout_match_mode == "exact":
@@ -193,8 +192,8 @@ def assertCli(
         stdout_exp,
         result.stdout,
         f"stdout mismatch\n{error_context}"
-        f"Expected : {repr(stdout_exp)} ({stdout_match_mode})\n"
-        f"Actual:   {repr(result.stdout)}",
+        f"Expected : {stdout_exp!r} ({stdout_match_mode})\n"
+        f"Actual:   {result.stdout!r}",
     )
 
     self.assertEqual(
@@ -229,7 +228,7 @@ def create_fresh_directory(dir_name: Path) -> Path:
     return dir_name
 
 
-def parse_args(argv=None) -> tuple[argparse.Namespace, List[str]]:
+def parse_args(argv=None) -> tuple[argparse.Namespace, list[str]]:
     """
     Parse command-line arguments for the CLI testing script.
     """
@@ -279,7 +278,7 @@ def parse_args(argv=None) -> tuple[argparse.Namespace, List[str]]:
 
 
 # Add the custom CLI assert function to unittest.TestCase class
-setattr(unittest.TestCase, "assertCli", assertCli)
+unittest.TestCase.assertCli = assertCli
 
 
 def main(argv=None, **kwargs):
