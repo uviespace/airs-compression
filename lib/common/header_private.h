@@ -25,6 +25,10 @@ enum { CHECKSUM_SEED = 419764627 };
 
 compile_time_assert(CMP_HDR_SIZE == 24, cmp_header_size_must_be_24_bytes);
 
+compile_time_assert((CMP_HDR_BITS_PREPROCESSING + CMP_HDR_BITS_ENCODER_TYPE +
+		     CMP_HDR_BITS_ORIGINAL_DTYPE) == 8,
+		    ped_fields_must_fill_one_byte);
+
 
 /**
  * @brief Serialize compression header to a byte buffer
