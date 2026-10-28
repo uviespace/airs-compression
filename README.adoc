@@ -11,11 +11,9 @@ endif::[]
 image::AIRSPACE_Logo.svg[]
 :toc: macro
 
-*AIRS* **P**ort**A**ble **C**ompression **E**ngine (*AIRSPACE*) is a
-specialised compression library designed for the AIRS instrument aboard the
-Ariel space telescope.
-This library implements optimised compression algorithms tailored to the
-instrument's scientific data processing.
+*AIRSPACE* is a specialised library for lossless compression of space science data.
+It supports a set of preprocessing and encoding methods to compress data
+and provides a command-line utility for (de)compressing files.
 
 [CAUTION]
 .API unstable

@@ -4,7 +4,7 @@
  * @date   2025
  * @copyright GPL-2.0
  *
- * @brief AIRSPACE CLI - A tool for (de)compressing AIRS science data
+ * @brief AIRSPACE CLI - A tool for (de)compressing space science data
  */
 
 #include <assert.h>
@@ -218,13 +218,16 @@ static const struct s8 *create_file_list(struct arena *a, char **argv, int argc,
 
 static void print_usage(FILE *stream, const char *program_name)
 {
-	LOG_F(stream, "Usage: %s [OPTIONS...] [FILE... | -] [-o OUTPUT]\n", program_name);
-	LOG_F(stream, "(De)compress AIRS science data FILE(s).\n\n");
+	LOG_F(stream, "(De)compress science data FILE(s).\n\n");
+	LOG_F(stream, "Usage: %s [OPTIONS...] [FILE... | -] [-o OUTPUT]\n\n", program_name);
 	LOG_F(stream, "With no FILE, or when FILE is -, read standard input.\n");
-	LOG_F(stream, "\nOptions:\n");
+	LOG_F(stream, "Options:\n");
 	LOG_F(stream, "  -c, --compress    Compress input files\n");
 	LOG_F(stream, "  -o OUTPUT         Write output to OUTPUT\n");
+	LOG_F(stream, "  --params KEY=VALUE[,KEY=VALUE...]\n");
+	LOG_F(stream, "                      Set compression parameters\n");
 	LOG_F(stream, "  -t, --test        Test compressed file integrity\n");
+	LOG_F(stream, "  --stdout          Write output to standard output\n");
 	LOG_F(stream, "  -q, --quiet       Decrease verbosity\n");
 	LOG_F(stream, "  -v, --verbose     Increase verbosity\n");
 	LOG_F(stream, "  --identifier ID   Set sequence identifier\n");

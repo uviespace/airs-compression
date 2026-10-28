@@ -2,8 +2,7 @@
 :toc: macro
 :page_id: cli_guide
 
-`*airspace*` - Command-line interface (CLI) for decompressing and compressing
-science data.
+`*airspace*` - Command-line interface (CLI) for (de)compressing files
 
 [NOTE]
 ====
@@ -33,17 +32,20 @@ For detailed build instructions, see the xref:../INSTALL.adoc[Installation Guide
 Here's a quick rundown of the available options:
 
 ----
+(De)compress science data FILE(s).
+
 Usage: ./programs/airspace [OPTIONS...] [FILE... | -] [-o OUTPUT]
-(De)compress AIRS science data FILE(s).
 
 With no FILE, or when FILE is -, read standard input.
-
 Options:
   -c, --compress    Compress input files
   -o OUTPUT         Write output to OUTPUT
+  --params KEY=VALUE[,KEY=VALUE...]
+                      Set compression parameters
+  -t, --test        Test compressed file integrity
+  --stdout          Write output to standard output
   -q, --quiet       Decrease verbosity
   -v, --verbose     Increase verbosity
-  -t, --test        Test compressed file integrity
   --identifier ID   Set sequence identifier
   --state-dir DIR   Use decompression state directory DIR
   --[no]color       Print color codes in output
