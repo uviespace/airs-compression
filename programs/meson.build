@@ -53,4 +53,15 @@ if asciidoctor.found()
     output : 'README.html',
     command : [asciidoctor, '--destination-dir=@OUTDIR@', '@INPUT@']
   )
+
+  if has_os_layer
+    custom_target('airspace-manpage',
+      input : 'airspace.1.adoc',
+      output : 'airspace.1',
+      command : [asciidoctor, '-b', 'manpage', '-o', '@OUTPUT@', '@INPUT@'],
+      install : true,
+      install_dir : get_option('mandir') / 'man1',
+      install_tag : 'doc',
+    )
+  endif
 endif

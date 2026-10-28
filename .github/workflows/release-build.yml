@@ -36,6 +36,7 @@ jobs:
           sudo apt-get update
           sudo apt-get -y --no-install-recommends install \
             build-essential \
+            asciidoctor \
             ninja-build \
             ruby \
             pkg-config
@@ -72,7 +73,7 @@ jobs:
           meson install -C ${{ env.BUILD_DIR }} \
             --destdir "${{ env.ARTIFACT_DIR }}" \
             --skip-subprojects \
-            --tags devel,runtime,bin
+            --tags devel,runtime,bin,doc
 
       - name: Test examples with installed library
         run: |

@@ -74,6 +74,8 @@ asciidoc_files = files([
   'INSTALL.adoc'
 ])
 
+install_data('LICENSE', install_tag: 'doc')
+
 if asciidoctor.found()
   html_files = []
   foreach f : asciidoc_files

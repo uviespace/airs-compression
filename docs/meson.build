@@ -59,10 +59,20 @@ if doxygen.found()
                 '@INPUT@',
             ],
         )
+        man_md = custom_target(
+            input: files('../programs/airspace.1.adoc'),
+            output: 'airspace-manpage.md',
+            command: pandoc_command + [
+                '--metadata=page_id:airspace_manpage',
+                '--metadata=page_title:airspace(1) Manual Page',
+                '--output=@OUTPUT@',
+                '@INPUT@',
+            ],
+        )
 
-        guide_pages = [install_md, cli_md]
+        guide_pages = [install_md, cli_md, man_md]
     else
-        message('Pandoc not found. Excluding INSTALL and CLI guides from documentation.')
+        message('Pandoc not found. Excluding INSTALL, CLI, and man page guides from documentation.')
     endif
 
     doxygen_awesome = subproject('doxygen-awesome-css')

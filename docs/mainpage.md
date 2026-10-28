@@ -40,3 +40,4 @@ The usual workflow is:
 
 - @ref installation_guide "Installation Guide"
 - @ref cli_guide "Command-line Interface"
+- @ref airspace_manpage "airspace(1) Manual Page"

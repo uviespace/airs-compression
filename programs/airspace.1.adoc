@@ -1,0 +1,181 @@
+= airspace(1)
+:doctype: manpage
+:manmanual: AIRSPACE CLI Manual
+:mansource: AIRSPACE
+
+== Name
+
+airspace - (De)compress science data
+
+== Synopsis
+
+*airspace* [_OPTIONS_] [_FILE_... | *-*]
+
+== Description
+
+*airspace* processes science data files. It decompresses by default, use *-c*
+to compress. Not all builds include the decompression.
+
+If no file is given, or a file is *-*, input is read from standard input.
+Without *-o*, standard input produces standard output. Terminal input is
+rejected, as is a terminal used for that default output.
+
+Unless *-o* is given, compression appends `.air` to the input name.
+Decompression removes `.air` or `.ce` postfixes. Source files are not removed.
+Existing output files are not overwritten.
+
+== Options
+
+*-c*, *--compress*::
+  Compress input files. Without this option, decompress.
+
+*-o* _OUTPUT_::
+  Write output to _OUTPUT_ instead of deriving a name. Use with a single input file.
+
+*--stdout*::
+  Write to standard output (even if it is the console), keep original files.
+
+*--params* _KEY=VALUE[,KEY=VALUE...]_::
+  Set one or more compression parameters. See <<compression-parameters,COMPRESSION PARAMETERS>> below.
+
+*-t*, *--test*::
+  Requires decompression support. Test the integrity of compressed files by
+  decompressing and discarding the output. Decompression errors and embedded
+  checksum mismatches (if included) are reported. No output files are created
+  or removed. If *--state-dir* is specified, decompression state files may
+  still be created or removed.
+
+*--state-dir* _DIR_::
+  Persist decompression state in _DIR_ between invocations so related files
+  in a sequence can be decompressed separately. Requires decompression support.
+  See <<decompression-state,DECOMPRESSION STATE>> below.
+
+*--identifier* _ID_::
+  Set the starting sequence identifier for compression.
+
+*-q*, *--quiet*::
+  Decrease verbosity.
+
+*-v*, *--verbose*::
+  Increase verbosity.
+
+*--color*, *--no-color*::
+  Enable or disable colored output.
+
+*-V*, *--version*::
+  Display version.
+
+*-h*, *--help*::
+  Display help.
+
+[[compression-parameters]]
+== Compression Parameters
+
+*--params* _KEY=VALUE[,KEY=VALUE...]_::
+  Configure the compression passes using a comma-separated list of parameters.
+  Specify only the parameters you want to change; the rest retain their defaults.
+  Parameter names and symbolic values are case-insensitive. Numeric parameters
+  take non-negative whole numbers. The available parameters are:
+
+=== Primary pass
+
+*primary_preprocessing*=_METHOD_::
+  Preprocess the input before encoding. `NONE` (default) leaves it unchanged;
+  `DIFF` computes differences between neighboring values; `IWT` applies an
+  integer wavelet transform. `MODEL` is only available for secondary passes.
+
+*primary_encoder_type*=_TYPE_::
+  Select `UNCOMPRESSED` (default), `GOLOMB_ZERO` (Golomb coding with zero
+  escape), or `GOLOMB_MULTI` (Golomb coding with multiple escapes).
+
+*primary_encoder_param*=_NUMBER_::
+  Set the primary encoder's numeric parameter, used with Golomb encoding.
+
+*primary_encoder_outlier*=_NUMBER_::
+  Set the outlier parameter for the primary `GOLOMB_MULTI` encoder.
+
+=== Secondary passes
+
+*secondary_iterations*=_NUMBER_::
+  Set the maximum number of secondary passes (0 to 255).
+  The default, `0`, disables secondary passes.
+
+*secondary_preprocessing*=_METHOD_::
+  Select `NONE` (default), `DIFF`, `IWT`, or `MODEL` preprocessing for secondary
+  passes. `MODEL` uses a model based on previously compressed data.
+
+*secondary_encoder_type*=_TYPE_::
+  Select `UNCOMPRESSED` (default), `GOLOMB_ZERO`, or `GOLOMB_MULTI` for
+  secondary passes.
+
+*secondary_encoder_param*=_NUMBER_::
+  Set the secondary encoder's numeric parameter, used with Golomb encoding.
+
+*secondary_encoder_outlier*=_NUMBER_::
+  Set the outlier parameter for the secondary `GOLOMB_MULTI` encoder.
+
+*model_rate*=_NUMBER_::
+  Set the model adaptation rate when `secondary_preprocessing=MODEL`.
+
+=== Additional parameters
+
+*checksum_enabled*=_BOOL_::
+  Include a checksum of the original data in the compressed file. Disabled
+  by default.
+
+*uncompressed_fallback_enabled*=_BOOL_::
+  Store uncompressed data when compression is ineffective. Disabled by default.
+
+For boolean parameters, use `TRUE` or `FALSE` (or `1` or `0`). For example:
+
+  airspace -c --params primary_preprocessing=DIFF,checksum_enabled=TRUE file1
+
+This applies difference preprocessing and adds a checksum to `file1.air`.
+
+[[decompression-state]]
+== Decompression State
+
+This section applies only to builds with decompression support.
+
+Some compressed files belong to a sequence and require the state produced by
+previous files (for example, when model preprocessing is used). When all files
+in the sequence are passed to one command, *airspace* processes them together.
+To decompress them in separate commands, pass the same *--state-dir* to each
+command, starting with the first file in the sequence:
+
+  airspace --state-dir ./state first.air
+  airspace --state-dir ./state second.air
+
+*airspace* loads saved state from _DIR_ before decompressing and saves updated
+state after successful decompression. State is kept separately for each
+sequence identifier, so sequences can be interleaved. Without *--state-dir*,
+state is not retained between invocations, a later file that depends on an
+earlier one must be supplied with the earlier files in the same command.
+
+*airspace* may create _DIR_ and state files as needed, overwrite them as the
+sequence progresses, and remove a sequence's state file when it completes. It
+removes _DIR_ when it becomes empty. Keep the directory available between
+commands and do not modify its state files. This option applies to
+*--test* as well: testing can update or remove saved state.
+
+== Examples
+
+  airspace -c file1 file2
+
+Compress `file1` and `file2` to `file1.air` and `file2.air`.
+
+  airspace -c --params checksum_enabled=TRUE file1
+
+Compress `file1` with a checksum.
+
+  airspace file1.air file2.air
+
+Decompress to `file1` and `file2` (requires decompression support).
+
+== Bugs
+
+Report bugs at: dominik.loidolt@univie.ac.at or https://github.com/uviespace/airs-compression/issues
+
+== Author
+
+Dominik Loidolt
