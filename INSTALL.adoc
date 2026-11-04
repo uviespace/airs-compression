@@ -116,6 +116,29 @@ Configuration options explained:
 * `-Ddebug=false`: Disables debug symbols and other information
 
 
+=== Cross-compile for Windows
+Cross-compilation for Windows is also possible with the https://www.mingw-w64.org/downloads/[Mingw-w64 toolchain].
+Run the executable and tests with https://gitlab.winehq.org/wine/wine/-/wikis/Download[Wine].
+To set up a Windows cross-compilation build environment, use the following command:
+
+[source,bash]
+----
+meson setup builddir_cross_win --cross-file=cross/mingw-w64-x86_64.txt
+----
+
+== Build Natively on Windows
+Install https://www.msys2.org/[MSYS2] and the MinGW-w64 GCC toolchain, Python,
+Meson, and Ninja. Open the *MSYS2 MinGW64* terminal and run these commands from
+the project root:
+
+[source,bash]
+----
+meson setup builddir_win
+meson compile -C builddir_win
+----
+
+MSVC is not supported.
+
 == Configure a Build Environment
 Meson allows you to configure various build options.
 Use `meson configure` to list all available options, and meson configure

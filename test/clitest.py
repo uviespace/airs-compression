@@ -30,12 +30,13 @@ class CliTest:
     """
 
     cli_path: Path | None = None
+    exe_wrapper: str | None = None
     test_root: Path = Path.cwd()
     cli_cwd = None
     # preserve_test_artifacts: bool = False
 
     def run_cli(
-        self, args: None | str | list[str] = None, stdin=None
+        self, args: str | list[str] | None = None, stdin=None
     ) -> subprocess.CompletedProcess:
         """
             Execute the CLI executable with specified arguments.
@@ -63,8 +64,20 @@ class CliTest:
         elif args is None:
             args = []
 
+        wrapper = self.exe_wrapper
+        if wrapper is None:
+            wrapper = os.environ.get("MESON_EXE_WRAPPER", "")
+        wrapper_args = shlex.split(wrapper) if wrapper else []
+        command = wrapper_args + [str(self.cli_path)] + args
+
+        child_env = os.environ.copy()
+        child_env["WINEDEBUG"] = "-all"
+        if sys.platform == "darwin":
+            child_env["MVK_CONFIG_LOG_LEVEL"] = "0"
+
         return subprocess.run(
-            [str(self.cli_path)] + args,
+            command,
+            env=child_env,
             input=stdin,
             capture_output=True,
             text=False,
@@ -151,10 +164,19 @@ def assertCli(
 
     error_context = "Command:\n" + create_command_string(result.args)
 
-    if isinstance(result.stdout, bytes) and not isinstance(stdout_exp, bytes):
+    text_stdout = not isinstance(stdout_exp, bytes)
+    text_stderr = not isinstance(stderr_exp, bytes)
+    if isinstance(result.stdout, bytes) and text_stdout:
         stdout_exp = stdout_exp.encode()
-    if isinstance(result.stderr, bytes) and not isinstance(stderr_exp, bytes):
+    if isinstance(result.stderr, bytes) and text_stderr:
         stderr_exp = stderr_exp.encode()
+    # Only normalize text expectations; compressed stdout is binary data.
+    actual_stdout = (
+        result.stdout.replace(b"\r\n", b"\n") if text_stdout else result.stdout
+    )
+    actual_stderr = (
+        result.stderr.replace(b"\r\n", b"\n") if text_stderr else result.stderr
+    )
 
     if stderr_match_mode == "exact":
         stderr_assertion = self.assertEqual
@@ -170,7 +192,7 @@ def assertCli(
 
     stderr_assertion(
         stderr_exp,
-        result.stderr,
+        actual_stderr,
         f"stderr mismatch\n{error_context}"
         f"Expected: {stderr_exp!r} ({stderr_match_mode})\n"
         f"Actual:   {result.stderr!r}",
@@ -190,7 +212,7 @@ def assertCli(
 
     stdout_assertion(
         stdout_exp,
-        result.stdout,
+        actual_stdout,
         f"stdout mismatch\n{error_context}"
         f"Expected : {stdout_exp!r} ({stdout_match_mode})\n"
         f"Actual:   {result.stdout!r}",
@@ -242,6 +264,11 @@ def parse_args(argv=None) -> tuple[argparse.Namespace, list[str]]:
         dest="cli_path",
     )
     parser.add_argument(
+        "--exe-wrapper",
+        default=None,
+        help="CLI wrapper command (defaults to MESON_EXE_WRAPPER)",
+    )
+    parser.add_argument(
         "--test-root",
         type=Path,
         default=Path("."),
@@ -284,7 +311,8 @@ unittest.TestCase.assertCli = assertCli
 def main(argv=None, **kwargs):
     args, unittest_argv = parse_args(argv)
 
-    CliTest.cli_path = args.cli_path
+    CliTest.cli_path = args.cli_path.absolute()
+    CliTest.exe_wrapper = args.exe_wrapper
     CliTest.test_root = args.test_root
     CliTest.cli_cwd = args.test_root
 

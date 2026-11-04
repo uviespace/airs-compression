@@ -20,6 +20,11 @@
  */
 
 
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__sparc__)
+#  ifndef _POSIX_C_SOURCE
+#    define _POSIX_C_SOURCE 200809L
+#  endif
+#endif
 #include <stdint.h>
 
 #include "clock.h"
@@ -285,6 +290,30 @@ static double grtimer_longcount_difftime(struct grtimer_unit *rtu, struct grtime
 	double t1 = (double)time1.coarse + (double)time1.fine / cpu_freq;
 
 	return t1 - t0;
+}
+
+#elif defined(_WIN32)
+#  include <windows.h>
+#  include <stdlib.h>
+#  include <stdio.h>
+
+uint64_t clock_get_time(void)
+{
+	static LARGE_INTEGER ticks_per_second;
+	static double ns_factor = 1.0;
+	static int init = 0;
+	LARGE_INTEGER counter;
+
+	if (!init) {
+		if (!QueryPerformanceFrequency(&ticks_per_second)) {
+			perror("clock::QueryPerformanceFrequency");
+			abort();
+		}
+		ns_factor = 1000000000.0 / (double)ticks_per_second.QuadPart;
+		init = 1;
+	}
+	QueryPerformanceCounter(&counter);
+	return (uint64_t)((double)counter.QuadPart * ns_factor);
 }
 
 #elif defined(__APPLE__) && defined(__MACH__)

@@ -59,15 +59,6 @@ if use_debug
 endif
 add_project_arguments(cc_flags, language : 'c')
 
-if ['windows', 'cygwin'].contains(host_machine.system()) and compiler.get_id() == 'gcc'
-  # by default, MinGW on win32 behaves as if it ignores __attribute__((packed)),
-  # you need to add -mno-ms-bitfields to make it work as expected.
-  # See: https://wintermade.it/blog/posts/__attribute__packed-on-windows-is-ignored-with-mingw.html
-  add_project_arguments('-mno-ms-bitfields', language : 'c')
-  add_global_link_arguments('-static', language: 'c')
-endif
-
-
 asciidoctor = find_program('asciidoctor', required: false)
 asciidoc_files = files([
   'README.adoc',

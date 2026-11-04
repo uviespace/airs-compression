@@ -14,13 +14,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 
 #include "../lib/cmp.h"
 #include "../lib/cmp_header.h"
 #include "arena.h"
 #include "file.h"
 #include "log.h"
+#include "os.h"
 #include "params_parse.h"
 #include "str_slice.h"
 
@@ -304,16 +304,7 @@ int main(int argc, char *argv[])
 	struct s8 output_filename = { 0 };
 	struct cmp_params params = { 0 };
 
-	/* Set up arena */
-	size_t cap = 1 << 26;
-	uint8_t *mem = mmap(0, cap, PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
-	struct arena a;
-
-	if (mem == MAP_FAILED) {
-		LOG_ERROR_WITH_ERRNO("mmap failed to allocate %llu bytes", (unsigned long long)cap);
-		return EXIT_FAILURE;
-	}
-	a = arena_init(mem, cap);
+	struct arena a = os_arena();
 
 	assert(argv);
 	assert(argc >= 1);

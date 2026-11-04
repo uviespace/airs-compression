@@ -14,6 +14,15 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "arena.h"
+
+/**
+ * @brief Default CLI arena capacity.
+ * A platform may override this before including os.h.
+ */
+#ifndef OS_ARENA_CAP
+#  define OS_ARENA_CAP ((size_t)1 << 26)
+#endif
 
 /** Marker for input redirection from standard input */
 #define STD_IN_MARK  "//*-stdin-*//"
@@ -38,6 +47,16 @@ struct os_load {
 	uint32_t size;
 	enum os_status status;
 };
+
+
+/**
+ * @brief Create an arena allocator
+ *
+ * Its memory lives until exit. The platform chooses the capacity.
+ * Calls arena_oom() on failure.
+ */
+struct arena os_arena(void);
+
 
 /**
  * @brief Read in a file or stdin
