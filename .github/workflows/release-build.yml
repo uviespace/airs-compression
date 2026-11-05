@@ -106,6 +106,80 @@ jobs:
             build_examples_test/meson-logs
           retention-days: 7
 
+  build-windows-cross:
+    name: Windows x86-64 Cross-Compilation
+    runs-on: ubuntu-latest
+
+    env:
+      BUILD_DIR: /tmp/airspace-build-windows
+      TARGET_ARCH: x86_64-w64-mingw32
+      WINEARCH: win64
+      WINEDEBUG: '-all'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y --no-install-recommends install \
+            gcc-mingw-w64-x86-64 \
+            ninja-build \
+            pkg-config \
+            ruby \
+            wine \
+            wine64
+          python -m pip install meson
+
+      - name: Set up Wine
+        run: |
+          set -euo pipefail
+          wineboot --init
+
+      - name: Configure cross-compilation
+        run: |
+          meson setup "$BUILD_DIR" \
+            --cross-file cross/mingw-w64-x86_64.txt \
+            --buildtype=release \
+            --strip \
+            --prefix="/${PROJECT_NAME}-${GITHUB_REF_NAME#v}" \
+            --bindir="bin/$TARGET_ARCH" \
+            --libdir="lib/$TARGET_ARCH"
+
+      - name: Run Windows tests under Wine
+        run: meson test -C "$BUILD_DIR" --print-errorlogs --num-processes 1
+
+      - name: Install Windows artifacts
+        run: |
+          meson install -C "$BUILD_DIR" \
+            --destdir "$ARTIFACT_DIR" \
+            --skip-subprojects \
+            --tags devel,runtime
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: artifacts-windows-cross
+          path: ${{ env.ARTIFACT_DIR }}
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: logs-windows-cross
+          path: ${{ env.BUILD_DIR }}/meson-logs
+          retention-days: 7
+
   build-bcc-cross:
     name: BCC Cross-Compilation
     runs-on: ubuntu-latest
@@ -209,7 +283,7 @@ jobs:
   create-release:
     name: Package and Release
     runs-on: ubuntu-latest
-    needs: [build-native-linux, build-bcc-cross]
+    needs: [build-native-linux, build-windows-cross, build-bcc-cross]
 
     permissions:
       contents: write
@@ -241,6 +315,10 @@ jobs:
             echo "RELEASE_NAME=${RELEASE_NAME}";
             echo "PACKAGE_PATH=${PACKAGE_PATH}";
           } >> "$GITHUB_ENV"
+
+          PACKAGE_DIR="${RUNNER_TEMP}/staging/${RELEASE_NAME}"
+          mv "${PACKAGE_DIR}/share/AIRSPACE/LICENSE" "${PACKAGE_DIR}/LICENSE"
+          rmdir "${PACKAGE_DIR}/share/AIRSPACE"
 
           tar -czf "${PACKAGE_PATH}" -C "${{ runner.temp }}/staging" .
           sha256sum "${PACKAGE_PATH}" > "${PACKAGE_PATH}.sha256"
