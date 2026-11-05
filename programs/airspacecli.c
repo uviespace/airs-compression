@@ -17,7 +17,7 @@
 
 #include "../lib/cmp.h"
 #include "../lib/cmp_header.h"
-#include "arena.h"
+#include "../lib/common/arena.h"
 #include "file.h"
 #include "log.h"
 #include "os.h"

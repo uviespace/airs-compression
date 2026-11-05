@@ -15,7 +15,7 @@
 #include "../lib/cmp_errors.h"
 #include "../lib/common/compiler.h"
 #include "../lib/common/header_private.h"
-#include "../programs/arena.h"
+#include "../lib/common/arena.h"
 
 #define ARRAY_AND_SIZE(arr) (arr), sizeof(arr)
 

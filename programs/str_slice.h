@@ -340,7 +340,7 @@ static __inline struct s8_u32_result s8_to_u32(struct s8 s)
 
 
 /* Arena-based string operations */
-#include "arena.h"
+#include "../lib/common/arena.h"
 
 static __inline struct s8 s8_clone(struct arena *a, struct s8 s)
 {

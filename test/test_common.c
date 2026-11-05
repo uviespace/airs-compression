@@ -18,7 +18,7 @@
 #include "test_common.h"
 #include "../lib/cmp_errors.h"
 #include "../lib/cmp_header.h"
-#include "../programs/arena.h"
+#include "../lib/common/arena.h"
 
 
 struct test_src make_test_src(struct arena *a, enum cmp_type dtype, const int32_t *samples,

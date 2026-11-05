@@ -15,7 +15,7 @@
 #include "str_slice.h"
 #include "../lib/common/byteorder.h"
 #include "../lib/common/bithacks.h"
-#include "arena.h"
+#include "../lib/common/arena.h"
 
 static int g_force_stdin_console;
 static int g_force_stdout_console;

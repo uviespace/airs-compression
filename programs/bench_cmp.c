@@ -18,7 +18,7 @@
 
 #include "clock.h"
 #include "fgs_frames.h"
-#include "arena.h"
+#include "../lib/common/arena.h"
 #include "../lib/common/bithacks.h"
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))

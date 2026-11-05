@@ -2,7 +2,7 @@
 has_os_layer = host_machine.system() != 'baremetal'
 
 cli_src = files([
-  'arena.c',
+  '../lib/common/arena.c',
   'params_parse.c',
   'log.c',
   'file.c',
@@ -40,7 +40,7 @@ if has_os_layer
 endif
 
 bench_cmp = executable('bench_cmp',
-  'bench_cmp.c', 'clock.c', 'arena.c',
+  'bench_cmp.c', 'clock.c', '../lib/common/arena.c',
   include_directories : inc_cmp,
   implicit_include_directories: false,
   link_with : [cmp_lib],

@@ -30,7 +30,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "../lib/common/bithacks.h"
+#include "bithacks.h"
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #  define ARENA_NORETURN [[noreturn]]
@@ -204,8 +204,8 @@ static __inline int arena_buf_ends_at_top(struct arena a, const void *buf, ptrdi
  *	most recent allocation.
  */
 
-static __inline void arena_shrink_last(struct arena *a, const void *alloc, ptrdiff_t alloc_size,
-				       ptrdiff_t shrunk_size)
+static __inline void arena_shrink_last(struct arena *a, const void *alloc MAYBE_UNUSED,
+				       ptrdiff_t alloc_size, ptrdiff_t shrunk_size)
 {
 	assert(alloc_size >= 0);
 	assert(shrunk_size <= alloc_size);
@@ -224,8 +224,8 @@ static __inline void arena_shrink_last(struct arena *a, const void *alloc, ptrdi
  *	most recent allocation.
  */
 
-static __inline void arena_grow_last(struct arena *a, const void *alloc, ptrdiff_t alloc_size,
-				     ptrdiff_t grow_size)
+static __inline void arena_grow_last(struct arena *a, const void *alloc MAYBE_UNUSED,
+				     ptrdiff_t alloc_size, ptrdiff_t grow_size)
 {
 	assert(grow_size >= 0);
 	assert(grow_size >= alloc_size);

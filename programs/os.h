@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "arena.h"
+#include "../lib/common/arena.h"
 
 /**
  * @brief Default CLI arena capacity.
