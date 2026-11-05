@@ -24,10 +24,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.x'
 
@@ -77,7 +79,7 @@ jobs:
 
       - name: Test examples with installed library
         run: |
-          export PKG_CONFIG_PATH="${{ env.ARTIFACT_DIR }}/${{ env.PROJECT_NAME }}-${GITHUB_REF_NAME#v}/lib/${{ env.TARGET_ARCH }}/pkgconfig:${PKG_CONFIG_PATH:-}"
+          export PKG_CONFIG_PATH="${ARTIFACT_DIR}/${PROJECT_NAME}-${GITHUB_REF_NAME#v}/lib/${TARGET_ARCH}/pkgconfig:${PKG_CONFIG_PATH:-}"
           echo "PKTPKG_CONFIG_PATH: $PKG_CONFIG_PATH"
           pkg-config --exists cmp || (echo "ERROR: cmp not found via pkg-config" && exit 1)
           echo "Library flags: $(pkg-config --libs cmp)"
@@ -87,7 +89,7 @@ jobs:
           meson test -C build_examples_test --print-errorlogs
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-native-linux
           path: ${{ env.ARTIFACT_DIR }}
@@ -96,7 +98,7 @@ jobs:
 
       - name: Upload build logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: logs-native-linux
           path: |
@@ -115,10 +117,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.x'
 
@@ -135,7 +139,7 @@ jobs:
 
       - name: Restore BCC toolchain cache
         id: cache-bcc
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.BCC_INSTALL_PATH }}
           key: bcc-${{ env.BCC_VERSION }}
@@ -185,7 +189,7 @@ jobs:
 
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-bcc-cross
           path: ${{ env.ARTIFACT_DIR }}
@@ -194,7 +198,7 @@ jobs:
 
       - name: Upload build logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: logs-bcc-cross
           path: |
@@ -212,12 +216,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           path: ${{ runner.temp }}/staging
@@ -248,7 +253,7 @@ jobs:
           args: --latest --verbose
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: AIRSPACE ${{ env.VERSION }}
           files: |
