@@ -157,8 +157,8 @@ int file_write(struct arena scratch, struct s8 path, const void *buf, uint32_t b
 		break;
 	case OS_TOOBIG:
 	default:
-		r = -1;
 		assert(0);
+		r = -1;
 	}
 
 	return r;

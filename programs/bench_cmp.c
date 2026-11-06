@@ -20,8 +20,7 @@
 #include "fgs_frames.h"
 #include "../lib/common/arena.h"
 #include "../lib/common/bithacks.h"
-
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
+#include "../lib/common/compiler.h"
 
 ARENA_NORETURN static void bench_oom(void)
 {
