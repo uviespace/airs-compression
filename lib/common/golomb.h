@@ -78,7 +78,7 @@ static __inline uint32_t golomb_upper_bound(uint32_t g_par, enum cmp_encoder_typ
 
 	/* Reserve space for all used multi-escape symbols. */
 	if (encoder_type == CMP_ENCODER_GOLOMB_MULTI) {
-		uint32_t num_escape_symbols = (n_bits + 1) / 2;
+		uint32_t num_escape_symbols = div_round_up_u32(n_bits, 2);
 
 		if (first_invalid_value > num_escape_symbols)
 			first_invalid_value -= num_escape_symbols;

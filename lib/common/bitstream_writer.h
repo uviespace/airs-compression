@@ -260,7 +260,8 @@ static __inline void bitstream_add_bytes(struct bitstream_writer *bs, const uint
 	}
 
 	remaining = (size_t)(bs->end - bs->ptr);
-	cached_bytes = sizeof(bs->cache) - ((bs->bit_cap + 7) / 8);
+	cached_bytes =
+		sizeof(bs->cache) - (bs->bit_cap / 8); /* bit_cap is always a multiple of 8  */
 	if (cached_bytes > remaining || nb_bytes > remaining - cached_bytes) {
 		bs->error = CMP_ERROR(DST_TOO_SMALL);
 		return;
@@ -570,7 +571,7 @@ static __inline uint32_t bitstream_flush(struct bitstream_writer *bs)
 		return bitstream_error(bs);
 
 	cursor = bs->ptr;
-	bytes = (64 - bs->bit_cap + 7) / 8;
+	bytes = div_round_up_u32(64 - bs->bit_cap, 8);
 	if (bytes) {
 		uint64_t tmp = bs->cache << bs->bit_cap;
 
@@ -600,7 +601,7 @@ static __inline uint32_t bitstream_size(const struct bitstream_writer *bs)
 	if (cmp_is_error_int(bitstream_error(bs)))
 		return bitstream_error(bs);
 
-	return (uint32_t)(bs->ptr - bs->start) + ((64 - (uint32_t)bs->bit_cap + 7) / 8);
+	return (uint32_t)(bs->ptr - bs->start) + div_round_up_u32(64 - (uint32_t)bs->bit_cap, 8);
 }
 
 
