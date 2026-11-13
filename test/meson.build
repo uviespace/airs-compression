@@ -112,7 +112,7 @@ else
 endif
 
 
-if airspacecli.found()
+if airspacecli.found() and meson.can_run_host_binaries()
   cli_tests = files([
     'cli_basic_test.py',
     'cli_compression_test.py'
@@ -121,12 +121,14 @@ if airspacecli.found()
   foreach test : cli_tests
     test_name = fs.name(test).split('.')[0]
 
-    # test('CLI Basic Test',
     test(test_name,
       find_program(test),
-      args : ['--cli', airspacecli.full_path(),
-              '--test-root',  meson.current_build_dir()],
+      # Pass the executable target rather than its path so Meson provides
+      # MESON_EXE_WRAPPER for cross builds.
+      args : ['--cli', airspacecli,
+              '--test-root', meson.current_build_dir()],
       depends : airspacecli,
+      timeout : meson.is_cross_build() ? 180 : 30,
       env : test_env)
   endforeach
 endif

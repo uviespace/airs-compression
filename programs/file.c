@@ -15,7 +15,7 @@
 #include "str_slice.h"
 #include "../lib/common/byteorder.h"
 #include "../lib/common/bithacks.h"
-#include "arena.h"
+#include "../lib/common/arena.h"
 
 static int g_force_stdin_console;
 static int g_force_stdout_console;
@@ -98,7 +98,7 @@ struct os_load file_read_be16(struct arena *perm, struct s8 path, enum file_flag
 	if (r.status != OS_OK)
 		return r;
 
-	if (r.size % 2) {
+	if (!is_multiple_of((uint32_t)r.size, 2)) {
 		LOG_ERROR("%.*s: file size not a multiple of 2", (int)path.len, path.s);
 		r.status = OS_IOERR;
 		return r;
@@ -157,8 +157,8 @@ int file_write(struct arena scratch, struct s8 path, const void *buf, uint32_t b
 		break;
 	case OS_TOOBIG:
 	default:
-		r = -1;
 		assert(0);
+		r = -1;
 	}
 
 	return r;
@@ -174,7 +174,7 @@ int file_save_be16(struct arena scratch, struct s8 path, const uint16_t *buf, ui
 
 	assert(buf);
 	assert(buf_size);
-	assert(buf_size % sizeof(*buf) == 0);
+	assert(is_multiple_of(buf_size, sizeof(*buf)));
 
 	for (i = 0; i < samples; i++)
 		tmp[i] = cpu_to_be16(buf[i]);

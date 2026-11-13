@@ -16,7 +16,6 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-from typing import List, Optional, Union
 
 SCRATCH_DIR_NAME = "scratch"
 
@@ -30,13 +29,14 @@ class CliTest:
     test environments and running CLI commands.
     """
 
-    cli_path: Optional[Path] = None
+    cli_path: Path | None = None
+    exe_wrapper: str | None = None
     test_root: Path = Path.cwd()
     cli_cwd = None
     # preserve_test_artifacts: bool = False
 
     def run_cli(
-        self, args: Union[None, str, List[str]] = None, stdin=None
+        self, args: str | list[str] | None = None, stdin=None
     ) -> subprocess.CompletedProcess:
         """
             Execute the CLI executable with specified arguments.
@@ -64,8 +64,20 @@ class CliTest:
         elif args is None:
             args = []
 
+        wrapper = self.exe_wrapper
+        if wrapper is None:
+            wrapper = os.environ.get("MESON_EXE_WRAPPER", "")
+        wrapper_args = shlex.split(wrapper) if wrapper else []
+        command = wrapper_args + [str(self.cli_path)] + args
+
+        child_env = os.environ.copy()
+        child_env["WINEDEBUG"] = "-all"
+        if sys.platform == "darwin":
+            child_env["MVK_CONFIG_LOG_LEVEL"] = "0"
+
         return subprocess.run(
-            [str(self.cli_path)] + args,
+            command,
+            env=child_env,
             input=stdin,
             capture_output=True,
             text=False,
@@ -97,8 +109,8 @@ class CliTest:
 def assertCli(
     self,
     result: subprocess.CompletedProcess,
-    stdout_exp: Union[str, bytes] = "",
-    stderr_exp: Union[str, bytes] = "",
+    stdout_exp: str | bytes = "",
+    stderr_exp: str | bytes = "",
     returncode_exp: int = RETURN_SUCCESS,
     stdout_match_mode: str = "exact",
     stderr_match_mode: str = "exact",
@@ -152,10 +164,19 @@ def assertCli(
 
     error_context = "Command:\n" + create_command_string(result.args)
 
-    if isinstance(result.stdout, bytes) and not isinstance(stdout_exp, bytes):
+    text_stdout = not isinstance(stdout_exp, bytes)
+    text_stderr = not isinstance(stderr_exp, bytes)
+    if isinstance(result.stdout, bytes) and text_stdout:
         stdout_exp = stdout_exp.encode()
-    if isinstance(result.stderr, bytes) and not isinstance(stderr_exp, bytes):
+    if isinstance(result.stderr, bytes) and text_stderr:
         stderr_exp = stderr_exp.encode()
+    # Only normalize text expectations; compressed stdout is binary data.
+    actual_stdout = (
+        result.stdout.replace(b"\r\n", b"\n") if text_stdout else result.stdout
+    )
+    actual_stderr = (
+        result.stderr.replace(b"\r\n", b"\n") if text_stderr else result.stderr
+    )
 
     if stderr_match_mode == "exact":
         stderr_assertion = self.assertEqual
@@ -171,10 +192,10 @@ def assertCli(
 
     stderr_assertion(
         stderr_exp,
-        result.stderr,
+        actual_stderr,
         f"stderr mismatch\n{error_context}"
-        f"Expected: {repr(stderr_exp)} ({stderr_match_mode})\n"
-        f"Actual:   {repr(result.stderr)}",
+        f"Expected: {stderr_exp!r} ({stderr_match_mode})\n"
+        f"Actual:   {result.stderr!r}",
     )
 
     if stdout_match_mode == "exact":
@@ -191,10 +212,10 @@ def assertCli(
 
     stdout_assertion(
         stdout_exp,
-        result.stdout,
+        actual_stdout,
         f"stdout mismatch\n{error_context}"
-        f"Expected : {repr(stdout_exp)} ({stdout_match_mode})\n"
-        f"Actual:   {repr(result.stdout)}",
+        f"Expected : {stdout_exp!r} ({stdout_match_mode})\n"
+        f"Actual:   {result.stdout!r}",
     )
 
     self.assertEqual(
@@ -229,7 +250,7 @@ def create_fresh_directory(dir_name: Path) -> Path:
     return dir_name
 
 
-def parse_args(argv=None) -> tuple[argparse.Namespace, List[str]]:
+def parse_args(argv=None) -> tuple[argparse.Namespace, list[str]]:
     """
     Parse command-line arguments for the CLI testing script.
     """
@@ -241,6 +262,11 @@ def parse_args(argv=None) -> tuple[argparse.Namespace, List[str]]:
         default=Path("../programs/airspace"),
         help="Path to the CLI to test",
         dest="cli_path",
+    )
+    parser.add_argument(
+        "--exe-wrapper",
+        default=None,
+        help="CLI wrapper command (defaults to MESON_EXE_WRAPPER)",
     )
     parser.add_argument(
         "--test-root",
@@ -279,13 +305,14 @@ def parse_args(argv=None) -> tuple[argparse.Namespace, List[str]]:
 
 
 # Add the custom CLI assert function to unittest.TestCase class
-setattr(unittest.TestCase, "assertCli", assertCli)
+unittest.TestCase.assertCli = assertCli
 
 
 def main(argv=None, **kwargs):
     args, unittest_argv = parse_args(argv)
 
-    CliTest.cli_path = args.cli_path
+    CliTest.cli_path = args.cli_path.absolute()
+    CliTest.exe_wrapper = args.exe_wrapper
     CliTest.test_root = args.test_root
     CliTest.cli_cwd = args.test_root
 

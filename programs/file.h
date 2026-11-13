@@ -14,7 +14,7 @@
 
 #include "os.h"
 #include "str_slice.h"
-#include "arena.h"
+#include "../lib/common/arena.h"
 
 static const struct s8 STD_IN_MARK_S8 = S8(STD_IN_MARK);
 static const struct s8 STD_OUT_MARK_S8 = S8(STD_OUT_MARK);

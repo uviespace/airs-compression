@@ -1,7 +1,4 @@
 /**
- * @mainpage  AIRS PortAble Compression Engine (AIRSPACE)
- * Please see @ref cmp.h for the compression API documentation.
- *
  * @file cmp.h
  * @author Dominik Loidolt (dominik.loidolt@univie.ac.at)
  * @date   2025
@@ -36,21 +33,22 @@
 #define CMP_EXPAND_AND_QUOTE(str) CMP_QUOTE(str)
 
 /* ====== Version Information ====== */
-#define CMP_VERSION_MAJOR   0 /**< major part of the version ID */
-#define CMP_VERSION_MINOR   8 /**< minor part of the version ID */
-#define CMP_VERSION_RELEASE 0 /**< release part of the version ID */
-
 /**
- * @brief Complete version number
+ * @addtogroup configuration
+ * @{
  */
+#define CMP_VERSION_MAJOR   0 /**< Major part of the version ID */
+#define CMP_VERSION_MINOR   8 /**< Minor part of the version ID */
+#define CMP_VERSION_RELEASE 0 /**< Release part of the version ID */
+
+/** Complete version number */
 #define CMP_VERSION_NUMBER \
 	((CMP_VERSION_MAJOR * 100 * 100) + (CMP_VERSION_MINOR * 100) + CMP_VERSION_RELEASE)
 
-/**
- * @brief Complete version string
- */
+/** Complete version string */
 #define CMP_VERSION_STRING \
 	CMP_EXPAND_AND_QUOTE(CMP_VERSION_MAJOR.CMP_VERSION_MINOR.CMP_VERSION_RELEASE)
+
 
 /* ====== Parameter Selection ====== */
 /**
@@ -88,6 +86,9 @@ enum cmp_encoder_type {
  * Supports independent configuration of preprocessing and encoders
  * for a primary compression pass and optional secondary passes.
  *
+ * A zero-initialized struct selects no preprocessing, uncompressed encoding,
+ * no secondary passes, no checksum, and no uncompressed fallback.
+ *
  * @warning Parameter names and behaviour may change in future versions.
  */
 
@@ -103,7 +104,7 @@ struct cmp_params {
 	/*
 	 * Secondary (subsequent passes) settings (if any)
 	 */
-	uint32_t secondary_iterations;                  /**< Max secondary passes (0 = disabled) */
+	uint32_t secondary_iterations; /**< Max secondary passes, 0..255 (0 = disabled) */
 	enum cmp_preprocessing secondary_preprocessing; /**< Preprocessing for secondary passes */
 	enum cmp_encoder_type secondary_encoder_type;   /**< Encoder for secondary passes */
 	uint32_t secondary_encoder_param;               /**< Parameter for the secondary encoder */
@@ -126,6 +127,7 @@ enum cmp_type {
 	CMP_U16,        /**< Unsigned 16-bit integers */
 	CMP_RAW12       /**< Two 12-bit samples packed into three bytes */
 };
+/** @} */
 
 
 /* forward declaration */
@@ -139,10 +141,16 @@ struct cmp_context;
  * @param code	return value to check
  *
  * @returns non-zero if the code is an error
+ * @ingroup error_handling
  */
 
 unsigned int cmp_is_error(uint32_t code);
 
+
+/**
+ * @addtogroup helpers
+ * @{
+ */
 
 /**
  * @brief Get the maximum compressed size in a worst-case scenario
@@ -209,6 +217,7 @@ uint32_t cmp_compress_bound(uint32_t src_size, enum cmp_type src_type);
 
 uint32_t cmp_cal_work_buf_size(const struct cmp_params *params, uint32_t src_size,
 			       enum cmp_type src_type);
+/** @} */
 
 
 /* ======   Compression Functions   ====== */
@@ -234,13 +243,19 @@ uint32_t cmp_cal_work_buf_size(const struct cmp_params *params, uint32_t src_siz
  *	the library only stores a pointer to it.
  *
  * @returns an error code, which can be checked using cmp_is_error()
+ * @ingroup context
  */
 
 uint32_t cmp_initialise(struct cmp_context *ctx, const struct cmp_params *params, void *work_buf,
 			uint32_t work_buf_size);
 
 
-/** Required alignment for the compression destination buffers */
+/**
+ * @addtogroup compression
+ * @{
+ */
+
+/** Required alignment for compression destination buffers */
 #define CMP_DST_ALIGNMENT sizeof(uint64_t)
 
 
@@ -307,6 +322,7 @@ uint32_t cmp_compress_u16(struct cmp_context *ctx, void *dst, uint32_t dst_capac
 
 uint32_t cmp_compress_raw12(struct cmp_context *ctx, void *dst, uint32_t dst_capacity,
 			    const uint8_t *src, uint32_t src_size);
+/** @} */
 
 
 /**
@@ -322,6 +338,7 @@ uint32_t cmp_compress_raw12(struct cmp_context *ctx, void *dst, uint32_t dst_cap
  * @param ctx	pointer to a compression context to reset
  *
  * @returns an error code, which can be checked using cmp_is_error()
+ * @ingroup context
  */
 
 uint32_t cmp_reset(struct cmp_context *ctx);
@@ -338,6 +355,7 @@ uint32_t cmp_reset(struct cmp_context *ctx);
  *	buffer or any other buffers.
  *
  * @param ctx	pointer to the compression context to be destroyed
+ * @ingroup context
  */
 
 void cmp_deinitialise(struct cmp_context *ctx);
@@ -347,23 +365,25 @@ void cmp_deinitialise(struct cmp_context *ctx);
 /**
  * @brief Compression header fields
  *
- * @note This is not the on-disk format - use cmp_hdr_serialize() and
- * cmp_hdr_deserialize() for conversion to/from the binary format.
+ * @note This is an in-memory representation, not the on-disk format. Use
+ * cmp_hdr_deserialize() to inspect a serialized header.
+ * @ingroup header
  */
 
 struct cmp_hdr {
-	uint16_t version;
-	uint32_t compressed_size;
-	uint32_t original_size;
-	uint32_t checksum;
-	uint32_t identifier;
-	uint8_t sequence_number;
-	enum cmp_preprocessing preprocessing;
-	enum cmp_encoder_type encoder_type;
-	uint32_t encoder_param;
-	uint32_t encoder_outlier;
-	enum cmp_type original_dtype;
-	uint32_t preprocess_param;
+	uint16_t version; /**< Version identifier of the software that built the compression header. */
+	uint32_t compressed_size; /**< Total size in bytes, including the header and data payload size. */
+	uint32_t original_size; /**< Size in bytes of the original, uncompressed data. */
+	uint32_t checksum;      /**< Checksum of the original data, zero if not used. */
+	uint32_t identifier;    /**< Unique identifier for a compression sequence. */
+	uint8_t sequence_number; /**< Position of the compression in the series identified by the identifier field, 0..255. */
+	enum cmp_preprocessing
+		preprocessing; /**< Preprocessing method used for the data payload, 0..7. */
+	enum cmp_encoder_type encoder_type; /**< Encoder type used for the data payload, 0..3. */
+	uint32_t encoder_param;             /**< Encoder specific parameter, zero if not used. */
+	uint32_t encoder_outlier; /**< Outlier threshold for GOLOMB_MULTI encoder, zero if not used. */
+	enum cmp_type original_dtype; /**< Data type of the original uncompressed data, 0..7. */
+	uint32_t preprocess_param;    /**< Preprocessing specific parameter. */
 };
 
 
@@ -375,10 +395,12 @@ struct cmp_hdr {
  * @param src_size	size of buffer
  * @param hdr		pointer to header structure to fill
  *
- * @note Only the version field is valid for headers with version 0.6 and earlier.
+ * @note Headers below version CMP_MIN_SUPPORTED_VERSION are rejected with
+ *	CMP_ERR_HDR_UNSUPPORTED.
  *
  * @returns the compression header size or an error, which can be checked using
  *	cmp_is_error()
+ * @ingroup header
  */
 
 uint32_t cmp_hdr_deserialize(const void *src, uint32_t src_size, struct cmp_hdr *hdr);
@@ -394,6 +416,7 @@ uint32_t cmp_hdr_deserialize(const void *src, uint32_t src_size, struct cmp_hdr 
  *			identically for checksum purposes
  *
  * @returns an error code which can be checked using cmp_is_error()
+ * @ingroup header
  */
 
 uint32_t cmp_hdr_checksum(uint32_t *checksum, const void *src, uint32_t src_size,
@@ -413,6 +436,7 @@ uint32_t cmp_hdr_checksum(uint32_t *checksum, const void *src, uint32_t src_size
  * executions. Use this function to choose a non-zero start value when you
  * need to avoid collisions across independent executions. This must be called
  * before cmp_initialise() or cmp_reset() for the new value to be picked up.
+ * @warning Not thread-safe, this changes process-global state.
  *
  * @param identifier	value to set the identifier counter
  */
@@ -429,6 +453,7 @@ void cmp_hdr_set_identifier(uint32_t identifier);
  * @warning This structure MUST NOT be directly manipulated by external code.
  *	Always use the provided API functions to interact with the compression
  *	context.
+ * @ingroup context
  */
 
 struct cmp_context {

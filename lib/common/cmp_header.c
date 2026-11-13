@@ -17,6 +17,7 @@
 #include "err_private.h"
 #include "sample_reader.h"
 #include "bitstream_writer.h"
+#include "bithacks.h"
 
 #define XXH_INLINE_ALL
 #define XXH_STATIC_LINKING_ONLY
@@ -150,7 +151,7 @@ uint32_t cmp_hdr_checksum_int(const struct sample_desc *desc)
 		uint32_t size = get_packed_size(desc);
 		uint8_t last;
 
-		if (desc->num_samples % 2 == 0)
+		if (is_multiple_of(desc->num_samples, 2))
 			return XXH32(desc->data, size, CHECKSUM_SEED);
 
 		/* For an odd number of samples, the upper nibble of the final

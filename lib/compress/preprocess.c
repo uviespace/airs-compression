@@ -24,6 +24,7 @@
 #include "../common/compiler.h"
 #include "../common/bithacks.h"
 #include "../common/err_private.h"
+#include "../common/common_preprocess.h"
 
 
 /* ====== Helper Functions for Integer Wavelet Transform (IWT) ===== */
@@ -41,7 +42,6 @@ static __inline int16_t iwt_odd_coefficient(int16_t centre, int16_t left, int16_
 {
 	return (int16_t)(centre - floor_division_by_2(left + right));
 }
-
 
 /**
  * @brief Calculates the last odd detail (high frequency) transform coefficient of the IWT
@@ -303,7 +303,7 @@ static uint32_t iwt_init(const struct sample_desc *src_desc, void *work_buf, uin
 		return CMP_ERROR(WORK_BUF_NULL);
 	if (work_buf_size < iwt_get_work_buf_size(src_desc->num_samples))
 		return CMP_ERROR(WORK_BUF_TOO_SMALL);
-	if ((uintptr_t)work_buf & (sizeof(*pre_cal_coefficient) - 1))
+	if (!is_aligned(work_buf, sizeof(*pre_cal_coefficient)))
 		return CMP_ERROR(WORK_BUF_UNALIGNED);
 
 	iwt_multi_level_decomposition_i16(src_desc, pre_cal_coefficient, src_desc->num_samples);
@@ -331,20 +331,6 @@ static int16_t iwt_process(uint32_t i, const struct sample_desc *src_desc UNUSED
 
 
 /**
- * @brief Calculates the required work buffer size for model preprocessing
- *
- * @param num_samples	number of data samples to perform the model preprocessing
- *
- * @returns the minimum required work buffer size
- */
-
-static uint32_t model_get_work_buf_size(uint32_t num_samples)
-{
-	return num_samples * sizeof(int16_t);
-}
-
-
-/**
  * @brief Initialise model preprocessing
  *
  * @param src_desc	source data descriptor pointer
@@ -361,9 +347,9 @@ static uint32_t model_init(const struct sample_desc *src_desc, void *work_buf,
 {
 	if (!work_buf)
 		return CMP_ERROR(WORK_BUF_NULL);
-	if (work_buf_size < model_get_work_buf_size(src_desc->num_samples))
+	if (work_buf_size < model_buffer_size(src_desc->num_samples))
 		return CMP_ERROR(WORK_BUF_TOO_SMALL);
-	if ((uintptr_t)work_buf & (sizeof(uint16_t) - 1))
+	if (!is_aligned(work_buf, sizeof(uint16_t)))
 		return CMP_ERROR(WORK_BUF_UNALIGNED);
 
 	return src_desc->num_samples;
@@ -392,10 +378,10 @@ static int16_t model_process(uint32_t i, const struct sample_desc *src_desc, voi
 const struct preprocessing_method *preprocessing_get_method(enum cmp_preprocessing type)
 {
 	static const struct preprocessing_method preprocessing_methods[] = {
-		{ CMP_PREPROCESS_NONE,  none_get_work_buf_size,  none_init,  none_process  },
-		{ CMP_PREPROCESS_DIFF,  none_get_work_buf_size,  none_init,  diff_process  },
-		{ CMP_PREPROCESS_IWT,   iwt_get_work_buf_size,   iwt_init,   iwt_process   },
-		{ CMP_PREPROCESS_MODEL, model_get_work_buf_size, model_init, model_process }
+		{ CMP_PREPROCESS_NONE,  none_get_work_buf_size, none_init,  none_process  },
+		{ CMP_PREPROCESS_DIFF,  none_get_work_buf_size, none_init,  diff_process  },
+		{ CMP_PREPROCESS_IWT,   iwt_get_work_buf_size,  iwt_init,   iwt_process   },
+		{ CMP_PREPROCESS_MODEL, model_buffer_size,      model_init, model_process }
 	};
 	size_t i;
 
@@ -404,25 +390,4 @@ const struct preprocessing_method *preprocessing_get_method(enum cmp_preprocessi
 			return &preprocessing_methods[i];
 	}
 	return NULL;
-}
-
-
-unsigned int preprocessing_get_output_bits(enum cmp_preprocessing type,
-					   const struct sample_desc *src_desc)
-{
-	switch (type) {
-	case CMP_PREPROCESS_IWT:
-		/* The 16-bit IWT can expand 12-bit input up to 16-bit coefficients. */
-		return bitsizeof(int16_t);
-	case CMP_PREPROCESS_NONE:
-	case CMP_PREPROCESS_DIFF:
-	case CMP_PREPROCESS_MODEL:
-	default:
-		/*
-		 * DIFF and MODEL residuals wrap at the source bit depth. For a
-		 * 12-bit sample, a difference of 4095 is the same as -1, so the
-		 * residual fits in 12 bits rather than requiring an extra bit.
-		 */
-		return get_eff_bit_depth(src_desc);
-	}
 }

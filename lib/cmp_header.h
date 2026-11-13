@@ -2,12 +2,14 @@
  * @file
  * @author Dominik Loidolt (dominik.loidolt@univie.ac.at)
  * @date   2025
- *
  * @copyright GPL-2.0
  *
- * @brief Compression header definitions
+ * @brief Binary compression header format definitions
+ * @see @ref format for the complete header layout and field descriptions.
  *
- * Based on ARIEL-UVIE-PL-TN-004 Issue 0.2
+ * Most users do not need to include this header directly.
+ * @warning These definitions are part of the serialized format contract. Changes
+ *	to field sizes or offsets may affect compatibility with stored data.
  */
 
 #ifndef CMP_HEADER_H
