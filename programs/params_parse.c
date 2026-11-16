@@ -15,7 +15,7 @@
 #include "cmp.h"
 #include "log.h"
 #include "params_parse.h"
-#include "arena.h"
+#include "../lib/common/arena.h"
 #include "str_slice.h"
 
 
@@ -103,7 +103,7 @@ static const struct param_def {
 	/* Feature flags */
 	{ S8("checksum_enabled"),              PARAM_FIELD(checksum_enabled),              &bool_map          },
 	{ S8("uncompressed_fallback_enabled"), PARAM_FIELD(uncompressed_fallback_enabled),
-         &bool_map											    }
+	 &bool_map                                                                                            }
 };
 #undef PARAM_FIELD
 

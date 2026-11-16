@@ -2,26 +2,37 @@
  * @file
  * @author Dominik Loidolt (dominik.loidolt@univie.ac.at)
  * @date   2026
+ * @brief Common parts of the os API
  * @copyright GPL-2.0
  *
- * @brief Platform-specific implementations
- *
- * Currently only POSIX is implemented
+ * Included by one platform source (os_posix.c or os_windows.c).
  */
 
 #include "os.h"
 
-/*
- * POSIX platform implementation
- */
-#include <stdint.h>
-#include <string.h>
-#include <stdio.h>
 #include <assert.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include <errno.h>
-#include <dirent.h>
+#include <stdio.h>
+#include <string.h>
+
+/* Private hooks implemented by the selected platform entry point. */
+static int os_set_binary_mode(FILE *stream);
+static int os_isatty(FILE *stream);
+static void *os_alloc(size_t size);
+
+struct arena os_arena(void)
+{
+	void *p;
+
+	if (OS_ARENA_CAP == 0 || OS_ARENA_CAP > PTRDIFF_MAX)
+		arena_oom();
+
+	p = os_alloc(OS_ARENA_CAP);
+	if (!p)
+		arena_oom();
+
+	return arena_init(p, OS_ARENA_CAP);
+}
 
 
 struct os_load os_read(const char *path, void *buf, uint32_t buf_size)
@@ -35,7 +46,20 @@ struct os_load os_read(const char *path, void *buf, uint32_t buf_size)
 
 	if (!strcmp(path, STD_IN_MARK)) {
 		fp = stdin;
+		if (os_set_binary_mode(fp)) {
+			r.status = OS_IOERR;
+			return r;
+		}
 	} else {
+		/*
+		 * MinGW rejects directories in fopen(), while POSIX fails on read.
+		 * Check first so both report OS_IOERR rather than OS_CANTOPEN.
+		 */
+		if (os_is_directory(path)) {
+			errno = EISDIR;
+			r.status = OS_IOERR;
+			return r;
+		}
 		fp = fopen(path, "rb");
 		if (!fp) {
 			r.status = OS_CANTOPEN;
@@ -50,7 +74,7 @@ struct os_load os_read(const char *path, void *buf, uint32_t buf_size)
 
 		if (c != EOF) {
 			r.status = OS_TOOBIG;
-			(void)ungetc(c, fp); /* put the byte back */
+			(void)ungetc(c, fp);
 		}
 	}
 
@@ -79,6 +103,8 @@ enum os_status os_save_from_buffer(const char *path, const void *buf, uint32_t b
 
 	if (!strcmp(path, STD_OUT_MARK)) {
 		fp = stdout;
+		if (os_set_binary_mode(fp))
+			return OS_IOERR;
 	} else {
 		fp = fopen(path, "wb");
 		if (!fp)
@@ -97,23 +123,6 @@ enum os_status os_save_from_buffer(const char *path, const void *buf, uint32_t b
 }
 
 
-int os_make_directory(const char *path)
-{
-	enum { DIR_DEFAULT_MODE = 0777 };
-	int r;
-
-	r = mkdir(path, DIR_DEFAULT_MODE);
-	if (r != 0 && errno == EEXIST) {
-		if (os_is_directory(path)) {
-			return 0;
-		}
-		errno = EEXIST;
-	}
-
-	return r;
-}
-
-
 void os_log(const char *msg, uint32_t msg_size)
 {
 	(void)fwrite(msg, 1, msg_size, stderr);
@@ -124,62 +133,15 @@ int os_is_console(const char *stream_marker, size_t stream_marker_len)
 {
 	if (stream_marker_len == sizeof(STD_IN_MARK) - 1 &&
 	    !memcmp(stream_marker, STD_IN_MARK, stream_marker_len))
-		return isatty(STDIN_FILENO);
+		return os_isatty(stdin);
 
 	if (stream_marker_len == sizeof(STD_OUT_MARK) - 1 &&
 	    !memcmp(stream_marker, STD_OUT_MARK, stream_marker_len))
-		return isatty(STDOUT_FILENO);
+		return os_isatty(stdout);
 
 	if (stream_marker_len == sizeof(STD_ERR_MARK) - 1 &&
 	    !memcmp(stream_marker, STD_ERR_MARK, stream_marker_len))
-		return isatty(STDERR_FILENO);
+		return os_isatty(stderr);
 
 	return 0;
-}
-
-
-int os_is_directory(const char *path)
-{
-	struct stat st;
-
-	return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
-}
-
-
-int os_directory_is_empty(const char *path)
-{
-	DIR *dir;
-	struct dirent *entry;
-
-	dir = opendir(path);
-	if (!dir)
-		return 0;
-
-	errno = 0;
-	while ((entry = readdir(dir)) != NULL) {
-		if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
-			(void)closedir(dir);
-			return 0;
-		}
-	}
-	(void)closedir(dir);
-
-	if (errno != 0)
-		return 0;
-
-	return 1;
-}
-
-
-int os_is_regular_file(const char *path)
-{
-	struct stat st;
-
-	return stat(path, &st) == 0 && S_ISREG(st.st_mode);
-}
-
-
-int os_remove(const char *path)
-{
-	return remove(path);
 }

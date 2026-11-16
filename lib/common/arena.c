@@ -12,7 +12,7 @@
 
 #include "arena.h"
 
-ARENA_NORETURN static void arena_default_oom(void)
+CMP_NORETURN static void arena_default_oom(void)
 {
 	exit(3);
 }
@@ -21,7 +21,7 @@ ARENA_NORETURN static void arena_default_oom(void)
 static void (*arena_oom_handler)(void) = &arena_default_oom;
 
 
-ARENA_NORETURN void arena_oom(void)
+CMP_NORETURN void arena_oom(void)
 {
 	arena_oom_handler();
 	abort();

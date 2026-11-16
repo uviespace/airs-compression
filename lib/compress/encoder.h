@@ -13,26 +13,6 @@
 #include <stdint.h>
 #include "../cmp.h"
 #include "../common/bitstream_writer.h"
-#include "../common/compiler.h"
-
-#define CMP_MAX(a, b) (((a) > (b)) ? (a) : (b))
-
-enum {
-	CMP_MIN_GOLOMB_PAR = 1,
-	CMP_MAX_GOLOMB_PAR = UINT16_MAX,
-
-	CMP_MAX_BITS_GOLOMB_CW = 32,
-
-	/* The current plan is to only encode uint16_t values */
-	CMP_NUM_BITS_PER_SAMPLE = bitsizeof(uint16_t),
-
-	/* In the worst case, each sample is encoded as an escape (max codeword + raw sample bits) */
-	CMP_MAX_BITS_ZERO_ESCAPE_CW =
-		31 - __builtin_clz((uint32_t)CMP_MAX_GOLOMB_PAR) + 1 + CMP_NUM_BITS_PER_SAMPLE,
-	CMP_MAX_BITS_MULTI_ESCAPE_CW = CMP_MAX_BITS_GOLOMB_CW + CMP_NUM_BITS_PER_SAMPLE,
-
-	CMP_MAX_BITS_CODEWORD = CMP_MAX(CMP_MAX_BITS_ZERO_ESCAPE_CW, CMP_MAX_BITS_MULTI_ESCAPE_CW)
-};
 
 
 /**
@@ -113,6 +93,5 @@ uint32_t cmp_encoder_params_check(enum cmp_encoder_type encoder_type, uint32_t e
  */
 
 uint64_t cmp_encoder_max_compressed_size(uint32_t num_samples);
-
 
 #endif /* CMP_ENCODER_H */

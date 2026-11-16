@@ -2,17 +2,21 @@
 import re
 
 
+class VersionExtractionError(Exception):
+    """Raised when a version component is missing from the header."""
+
+
 def extract_version(header_file):
     version_parts = {"MAJOR": 0, "MINOR": 0, "RELEASE": 0}
 
     with open(header_file, "r") as file:
         content = file.read()
-        for part in version_parts.keys():
+        for part in version_parts:
             match = re.search(rf"#define CMP_VERSION_{part}\s+(\d+)", content)
             if match:
                 version_parts[part] = int(match.group(1))
                 continue
-            raise Exception("Unable to find " + part + " version string")
+            raise VersionExtractionError("Unable to find " + part + " version string")
 
     return (
         f"{version_parts['MAJOR']}.{version_parts['MINOR']}.{version_parts['RELEASE']}"
@@ -32,5 +36,5 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception:
+    except (OSError, VersionExtractionError):
         print("unknown")

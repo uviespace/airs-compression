@@ -10,9 +10,10 @@
 #include <string.h>
 #include <unity.h>
 
-#include "../programs/params_parse.h"
-#include "../lib/common/compiler.h"
 #include "test_common.h"
+
+/* Compile the implementation with the test arena hooks already configured. */
+#include "../programs/params_parse.c"
 
 
 void test_parse_preprocess_enums(void)

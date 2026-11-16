@@ -1,0 +1,3 @@
+# $if(page_title)$$page_title$$else$$title$$endif$ {#$page_id$}
+
+$body$

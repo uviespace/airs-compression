@@ -10,12 +10,47 @@
 #ifndef TEST_COMMON_H
 #define TEST_COMMON_H
 
+#include <stddef.h>
+#include <string.h>
 #include <unity.h>
 #include "../lib/cmp.h"
 #include "../lib/cmp_errors.h"
 #include "../lib/common/compiler.h"
 #include "../lib/common/header_private.h"
-#include "../programs/arena.h"
+
+/*
+ * Without ASan/MSan, overwrite stale and uninitialized data without changing
+ * allocation layout. Include before arena.h to apply the test hooks.
+ */
+#if !CMP_ASAN_ENABLED && !CMP_MSAN_ENABLED && !defined(ARENA_POISON) && !defined(ARENA_UNPOISON)
+enum { POISON = 0xBD, UNPOISON = 0xA0 };
+
+static __inline void test_arena_poison(void *ptr, size_t size)
+{
+	TEST_ASSERT_NOT_NULL(ptr);
+	TEST_ASSERT_GREATER_THAN(0, size);
+	memset(ptr, POISON, size);
+}
+
+
+static __inline void test_arena_unpoison(void *ptr, size_t size)
+{
+	TEST_ASSERT_NOT_NULL(ptr);
+	TEST_ASSERT_GREATER_THAN(0, size);
+	memset(ptr, UNPOISON, size);
+}
+
+/* Destructive test hooks, not production memory-checker annotations. */
+#  define ARENA_POISON(ptr, size)   test_arena_poison(ptr, size)
+#  define ARENA_UNPOISON(ptr, size) test_arena_unpoison(ptr, size)
+
+/* Keep the unsanitized production layout: no extra gaps or alignment. */
+#  ifndef ARENA_RED_ZONE_SIZE
+#    define ARENA_RED_ZONE_SIZE 0
+#  endif
+#endif
+
+#include "../lib/common/arena.h"
 
 #define ARRAY_AND_SIZE(arr) (arr), sizeof(arr)
 

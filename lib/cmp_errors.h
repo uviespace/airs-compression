@@ -4,13 +4,8 @@
  * @date   2025
  * @copyright GPL-2.0
  *
- * @brief Compression error codes definitions
- *
+ * @brief Compression error codes and error handling utilities
  * @warning The interface is not frozen yet and may change in future versions.
- * Changes may include:
- *    - Change error names
- *    - Change error values
- *    - Change/Extended API functionality
  */
 
 #ifndef CMP_ERRORS_H
@@ -19,6 +14,10 @@
 #include <stdint.h>
 
 
+/**
+ * @addtogroup error_handling
+ * @{
+ */
 /**
  * @brief Enumeration of all error codes
  *
@@ -104,6 +103,6 @@ const char *cmp_get_error_message(uint32_t code);
  */
 
 const char *cmp_get_error_string(enum cmp_error code);
-
+/** @} */
 
 #endif /* CMP_ERRORS_H */

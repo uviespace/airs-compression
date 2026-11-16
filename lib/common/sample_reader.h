@@ -51,11 +51,11 @@ static __inline uint32_t sample_read_src_init(struct sample_desc *src_desc, cons
 	switch (src_type) {
 	case CMP_I16:
 	case CMP_U16:
-		if (src_size % sizeof(int16_t) != 0)
+		if (!is_multiple_of(src_size, sizeof(int16_t)))
 			return CMP_ERROR(SRC_SIZE_WRONG);
 		break;
 	case CMP_I16_IN_I32:
-		if (src_size % sizeof(int32_t) != 0)
+		if (!is_multiple_of(src_size, sizeof(int32_t)))
 			return CMP_ERROR(SRC_SIZE_WRONG);
 		break;
 	case CMP_RAW12:

@@ -21,7 +21,7 @@
 #include "../common/header_private.h"
 #include "../common/bithacks.h"
 #include "../common/compiler.h"
-#include "../common/model.h"
+#include "../common/common_preprocess.h"
 
 enum { CMP_MAGIC = 34021395 }; /* arbitrary magic number I like */
 
@@ -150,7 +150,7 @@ uint32_t cmp_initialise(struct cmp_context *ctx, const struct cmp_params *params
 		if (work_buf_size == 0)
 			return CMP_ERROR(WORK_BUF_TOO_SMALL);
 
-		if ((uintptr_t)work_buf & (sizeof(uint16_t) - 1))
+		if (!is_aligned(work_buf, sizeof(uint16_t)))
 			return CMP_ERROR(WORK_BUF_UNALIGNED);
 	}
 
@@ -211,20 +211,6 @@ static int state_is_needed(const struct cmp_params *params)
 }
 
 
-static enum cmp_type get_state_sample_type(const struct sample_desc *src_desc)
-{
-	switch (src_desc->dtype) {
-	case CMP_U16:
-	case CMP_RAW12:
-		return CMP_U16;
-	case CMP_I16:
-	case CMP_I16_IN_I32:
-	default:
-		return CMP_I16;
-	}
-}
-
-
 /* Main compression loop */
 static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst_capacity,
 				const struct sample_desc *src_desc)
@@ -254,7 +240,7 @@ static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst
 		selected_encoder_param = ctx->params.primary_encoder_param;
 		selected_outlier = ctx->params.primary_encoder_outlier;
 		ctx->state_num_samples = src_desc->num_samples;
-		ctx->state_dtype = get_state_sample_type(src_desc);
+		ctx->state_dtype = get_state_sample_type(src_desc->dtype);
 	} else {
 		selected_preprocessing = ctx->params.secondary_preprocessing;
 		selected_encoder_type = ctx->params.secondary_encoder_type;
@@ -266,12 +252,12 @@ static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst
 		 */
 		if (state_is_needed(&ctx->params) &&
 		    (src_desc->num_samples != ctx->state_num_samples ||
-		     get_state_sample_type(src_desc) != ctx->state_dtype))
+		     get_state_sample_type(src_desc->dtype) != ctx->state_dtype))
 			return CMP_ERROR(SRC_MISMATCH);
 	}
 
 	if (state_is_needed(&ctx->params)) {
-		if (ctx->work_buf_size < src_desc->num_samples * sizeof(uint16_t))
+		if (ctx->work_buf_size < model_buffer_size(src_desc->num_samples))
 			return CMP_ERROR(WORK_BUF_TOO_SMALL);
 		model = ctx->work_buf;
 	}
@@ -290,7 +276,7 @@ static uint32_t compress_engine(struct cmp_context *ctx, void *dst, uint32_t dst
 	    selected_encoder_type == CMP_ENCODER_UNCOMPRESSED)
 		n_bits = 16;
 	else
-		n_bits = preprocessing_get_output_bits(selected_preprocessing, src_desc);
+		n_bits = preprocessing_get_output_bits(selected_preprocessing, src_desc->dtype);
 	ret = cmp_encoder_init(&enc, selected_encoder_type, selected_encoder_param,
 			       selected_outlier, n_bits);
 	if (cmp_is_error_int(ret))

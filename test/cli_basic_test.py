@@ -28,7 +28,6 @@ class TestBasicOptions(unittest.TestCase):
     def test_print_version_string_to_stdout(self):
         for arg in [["-V"], ["--version"], ["-qvV"]]:
             with self.subTest(arg=arg):
-
                 result = self.airspace(arg)
 
                 self.assertCli(
@@ -38,7 +37,6 @@ class TestBasicOptions(unittest.TestCase):
     def test_print_version_minimal_string_to_stdout(self):
         for arg in [["-qV"], ["--quiet", "--version"], ["-q", "-V"]]:
             with self.subTest(arg=arg):
-
                 result = self.airspace(arg)
 
                 self.assertCli(result, stdout_exp=VERSION_STR_EXP + "\n")
@@ -46,7 +44,6 @@ class TestBasicOptions(unittest.TestCase):
     def test_print_help_text(self):
         for arg in [["-h"], ["--help"]]:
             with self.subTest(arg=arg):
-
                 result = self.airspace(arg)
 
                 self.assertCli(

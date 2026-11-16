@@ -1,0 +1,62 @@
+/**
+ * @defgroup configuration Configuration
+ * @brief Configure compression parameters
+ *
+ * Use struct cmp_params to configure preprocessing, encoders, secondary
+ * passes, and optional features. Pass an enum cmp_type value separately when
+ * calculating buffer sizes and compressing data.
+ * See @ref design "Compression Design" for parameter selection and behavior.
+ */
+
+/**
+ * @defgroup helpers Buffer Sizing
+ * @brief Calculate compression buffer requirements
+ *
+ * Calculate the required destination and working-buffer sizes before
+ * allocating memory. Check each result with cmp_is_error() before using it as
+ * a size.
+ */
+
+/**
+ * @defgroup error_handling Error Handling
+ * @brief Check results and retrieve error information
+ *
+ * Functions that return either a size or an error must be checked with
+ * cmp_is_error() before the result is used as a size. Use the functions in
+ * this group to retrieve the error code or a readable error message.
+ */
+
+/**
+ * @defgroup context Compression Context
+ * @brief Manage state across compression passes
+ *
+ * A context stores configuration and state between compression passes.
+ * Initialise it before use, reset it before starting an independent sequence,
+ * and deinitialise it when finished. Access it only through the public
+ * functions in this group.
+ *
+ * A context may be reused for sequential compression passes. Passes using the
+ * same context or working buffer must not run in parallel.
+ * See @ref design_multi_pass "Multi-Pass Configuration" for sequence behavior.
+ */
+
+/**
+ * @defgroup compression Compression
+ * @brief Compress input samples
+ *
+ * Select the function matching the source data type. Compression functions
+ * return the size of the compressed data on success or an error code on
+ * failure.
+ * See @ref design_preprocessing "Preprocessing Configuration" and
+ * @ref design_encoder "Encoder Configuration" for how a pass transforms and
+ * encodes its input.
+ */
+
+/**
+ * @defgroup header Compression Header
+ * @brief Work with metadata stored in compressed data
+ *
+ * The compressor writes headers internally. Use the functions in this group to
+ * deserialise their host-independent fields and calculate source checksums.
+ * See @ref format "Compression Header Format" for the binary layout.
+ */

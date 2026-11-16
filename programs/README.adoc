@@ -1,14 +1,19 @@
 = Command Line Interface for AIRSPACE
 :toc: macro
+:page_id: cli_guide
 
-`*airspace*` - Command-line interface (CLI) for decompressing and compressing
-AIRS science data.
+`*airspace*` - Command-line interface (CLI) for (de)compressing files
+
+[NOTE]
+====
+The `airspace` CLI in the public release only contains the *compression*
+functionality. If you also need the decompression, please contact us.
+====
 
 toc::[]
 
 == Installation
-To get started with the AIRSPACE CLI, run the following commands in the project
-root:
+To build the `airspace` CLI, run the following commands in the project root:
 
 [source,bash]
 ----
@@ -17,7 +22,7 @@ meson setup build_release --buildtype=release
 cd build_release
 meson compile programs/airspace
 
-# And voila! The AIRSPACE CLI tool is now ready to use.
+# And voila! The airspace CLI tool is now ready to use.
 ./programs/airspace --help
 ----
 
@@ -26,18 +31,23 @@ For detailed build instructions, see the xref:../INSTALL.adoc[Installation Guide
 == Usage
 Here's a quick rundown of the available options:
 
-[source,bash]
 ----
+(De)compress science data FILE(s).
+
 Usage: ./programs/airspace [OPTIONS...] [FILE... | -] [-o OUTPUT]
-(De)compress AIRS science data FILE(s).
 
 With no FILE, or when FILE is -, read standard input.
-
 Options:
   -c, --compress    Compress input files
   -o OUTPUT         Write output to OUTPUT
+  --params KEY=VALUE[,KEY=VALUE...]
+                      Set compression parameters
+  -t, --test        Test compressed file integrity
+  --stdout          Write output to standard output
   -q, --quiet       Decrease verbosity
   -v, --verbose     Increase verbosity
+  --identifier ID   Set sequence identifier
+  --state-dir DIR   Use decompression state directory DIR
   --[no]color       Print color codes in output
   -V, --version     Display version
   -h, --help        Display this help
@@ -46,18 +56,21 @@ Options:
 == Examples
 Here are a few examples to get you started.
 
-*Compressing Files:*
+=== Compressing Files
 
 [source,bash]
 ----
-airspace -c file1.dat file2.dat -o output.air
+# Compress file1 and file2 to file1.air and file2.air
+airspace -c file1 file2
 ----
 
-*Decompressing Files (Coming Soon!):*
+=== Decompressing Files
+Decompression is *not* part of the public release. If you need it, contact us.
 
 [source,bash]
 ----
-airspace output.air -o file1.dat file2.dat
+# Decompress file1.air and file2.air to file1 and file2
+airspace file1.air file2.air
 ----
 
 Happy (de)compressing! 🚀

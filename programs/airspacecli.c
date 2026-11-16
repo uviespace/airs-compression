@@ -4,7 +4,7 @@
  * @date   2025
  * @copyright GPL-2.0
  *
- * @brief AIRSPACE CLI - A tool for (de)compressing AIRS science data
+ * @brief AIRSPACE CLI - A tool for (de)compressing space science data
  */
 
 #include <assert.h>
@@ -14,13 +14,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 
 #include "../lib/cmp.h"
 #include "../lib/cmp_header.h"
-#include "arena.h"
+#include "../lib/common/arena.h"
 #include "file.h"
 #include "log.h"
+#include "os.h"
 #include "params_parse.h"
 #include "str_slice.h"
 
@@ -218,15 +218,20 @@ static const struct s8 *create_file_list(struct arena *a, char **argv, int argc,
 
 static void print_usage(FILE *stream, const char *program_name)
 {
-	LOG_F(stream, "Usage: %s [OPTIONS...] [FILE... | -] [-o OUTPUT]\n", program_name);
-	LOG_F(stream, "(De)compress AIRS science data FILE(s).\n\n");
+	LOG_F(stream, "(De)compress science data FILE(s).\n\n");
+	LOG_F(stream, "Usage: %s [OPTIONS...] [FILE... | -] [-o OUTPUT]\n\n", program_name);
 	LOG_F(stream, "With no FILE, or when FILE is -, read standard input.\n");
-	LOG_F(stream, "\nOptions:\n");
+	LOG_F(stream, "Options:\n");
 	LOG_F(stream, "  -c, --compress    Compress input files\n");
 	LOG_F(stream, "  -o OUTPUT         Write output to OUTPUT\n");
+	LOG_F(stream, "  --params KEY=VALUE[,KEY=VALUE...]\n");
+	LOG_F(stream, "                      Set compression parameters\n");
+	LOG_F(stream, "  -t, --test        Test compressed file integrity\n");
+	LOG_F(stream, "  --stdout          Write output to standard output\n");
 	LOG_F(stream, "  -q, --quiet       Decrease verbosity\n");
 	LOG_F(stream, "  -v, --verbose     Increase verbosity\n");
 	LOG_F(stream, "  --identifier ID   Set sequence identifier\n");
+	LOG_F(stream, "  --state-dir DIR   Use decompression state directory DIR\n");
 	LOG_F(stream, "  --[no]color       Print color codes in output\n");
 	LOG_F(stream, "  -V, --version     Display version\n");
 	LOG_F(stream, "  -h, --help        Display this help\n");
@@ -277,6 +282,7 @@ int main(int argc, char *argv[])
 		{ "params",                 required_argument, NULL, 'p'                      },
 		{ "identifier",             required_argument, NULL, IDENTIFIER_OPT           },
 		{ "stdout",                 no_argument,       NULL, STDOUT_OPT               },
+		{ "test",                   no_argument,       NULL, 't'                      },
 		{ "verbose",                no_argument,       NULL, 'v'                      },
 		{ "quiet",                  no_argument,       NULL, 'q'                      },
 		{ "color",                  no_argument,       NULL, COLOR_OPT                },
@@ -298,23 +304,14 @@ int main(int argc, char *argv[])
 	struct s8 output_filename = { 0 };
 	struct cmp_params params = { 0 };
 
-	/* Set up arena */
-	size_t cap = 1 << 26;
-	uint8_t *mem = mmap(0, cap, PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
-	struct arena a;
-
-	if (mem == MAP_FAILED) {
-		LOG_ERROR_WITH_ERRNO("mmap failed to allocate %llu bytes", (unsigned long long)cap);
-		return EXIT_FAILURE;
-	}
-	a = arena_init(mem, cap);
+	struct arena a = os_arena();
 
 	assert(argv);
 	assert(argc >= 1);
 	program_name = argv[0];
 	log_setup_color();
 
-	while ((ch = getopt_long(argc, argv, "Vvqhco:", long_options, NULL)) != -1) {
+	while ((ch = getopt_long(argc, argv, "Vvqhcto:", long_options, NULL)) != -1) {
 		switch (ch) {
 		case 'c':
 			mode = MODE_COMPRESS;
@@ -342,6 +339,9 @@ int main(int argc, char *argv[])
 		}
 		case STDOUT_OPT:
 			output_filename = STD_OUT_MARK_S8;
+			break;
+		case 't':
+			output_filename = NULL_MARK_S8;
 			break;
 		case 'v':
 			log_increase_verbosity();
